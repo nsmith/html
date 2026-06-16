@@ -5,6 +5,17 @@ license: MIT
 metadata:
   homepage: "https://ht-ml.app"
   api-base: "https://api.ht-ml.app/v1"
+  version: "1.0.0"
+  author: "Nathan Smith"
+  license: "MIT"
+  hermes:
+    tags:
+      - html
+      - hosting
+      - publishing
+      - deploy
+      - web
+      - ht-ml.app
 ---
 
 # Publishing HTML to ht-ml.app
