@@ -1,0 +1,25 @@
+# Toolchain for the `html` agent skill.
+#
+# `mise install`         → provisions Python + uv.
+# `mise run validate`    → validates this skill against the Agent Skills spec.
+# `mise run install-cli` → installs the `skills-ref` CLI persistently onto PATH.
+#
+# skills-ref is not on PyPI, so it's installed from the agentskills git
+# subdirectory. mise's pipx backend can't express a git subdirectory, so uv
+# drives the install directly (uvx for one-off runs, `uv tool install` for a
+# persistent CLI).
+
+[tools]
+python = "3.12"
+uv = "latest"
+
+[env]
+SKILLS_REF = "git+https://github.com/agentskills/agentskills.git#subdirectory=skills-ref"
+
+[tasks.validate]
+description = "Validate this skill against the Agent Skills spec"
+run = "uvx --from \"$SKILLS_REF\" skills-ref validate \"$PWD\""
+
+[tasks.install-cli]
+description = "Install the skills-ref CLI persistently with uv (adds `skills-ref` to PATH)"
+run = "uv tool install \"$SKILLS_REF\""
