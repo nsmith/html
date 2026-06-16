@@ -11,47 +11,43 @@ The agent-facing instructions live in [`SKILL.md`](SKILL.md).
 
 ## Install
 
-A skill is just a folder containing `SKILL.md`. To install, put this repo into
-your agent's skills directory **in a folder named `html`** (the folder name must
-match the skill's `name`). Pick your client below.
+### Quick install (recommended)
 
-### Claude Code
+One command installs the skill into the regular user-level skill locations for
+**both Claude Code and Codex**:
 
 ```bash
-# Personal (available in every project)
+curl -fsSL https://raw.githubusercontent.com/nsmith/html/main/install.sh | sh
+```
+
+This clones the skill to `~/.claude/skills/html` (Claude Code) and
+`~/.agents/skills/html` (Codex). Re-run anytime to update. Prefer to review first?
+It's [`install.sh`](install.sh). To install elsewhere (e.g. project-local), set
+`SKILLS_DIR` or `DEST`:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/nsmith/html/main/install.sh | SKILLS_DIR=.claude/skills sh
+```
+
+### Manual install
+
+A skill is just a folder containing `SKILL.md`; place it in your client's skills
+directory **in a folder named `html`** (the folder name must match the skill's
+`name`):
+
+| Client | Clone into |
+| :----- | :--------- |
+| Claude Code (personal) | `~/.claude/skills/html` |
+| Claude Code (project)  | `.claude/skills/html` |
+| Codex (personal)       | `~/.agents/skills/html` |
+| Codex / VS Code (project) | `.agents/skills/html` |
+
+```bash
 git clone https://github.com/nsmith/html.git ~/.claude/skills/html
-
-# …or per-project (committed with one repo)
-git clone https://github.com/nsmith/html.git .claude/skills/html
 ```
 
-Start (or restart) Claude Code and run `/skills` — `html` should appear. Then ask
-something like *"publish this HTML and give me a link"* and it will activate.
-
-### VS Code (GitHub Copilot)
-
-```bash
-git clone https://github.com/nsmith/html.git .agents/skills/html
-```
-
-Open the project, select **Agent** mode in Copilot Chat, and run `/skills` to
-confirm `html` is listed.
-
-### OpenAI Codex & other Agent Skills clients
-
-Clone into the skills directory your client scans (consult its docs — common
-locations are `.agents/skills/`, `~/.codex/skills/`, or `.claude/skills/`), again
-as a folder named `html`:
-
-```bash
-git clone https://github.com/nsmith/html.git <skills-dir>/html
-```
-
-### Updating
-
-```bash
-cd <wherever-you-installed>/html && git pull
-```
+After installing, restart your agent and run `/skills` to confirm `html` is
+listed. Update later with `git pull` (or re-run the quick installer).
 
 ## What's inside
 
