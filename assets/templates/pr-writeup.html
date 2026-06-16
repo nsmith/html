@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<!--
+  Template: PR Writeup for Reviewers
+  Use: A single-page summary that helps reviewers understand a pull request fast.
+       Covers motivation, a before/after comparison, and a file-by-file walkthrough.
+  How to use:
+    1. Replace every <!-- REPLACE: ... --> spot and obvious placeholder text below.
+    2. Keep it self-contained (all CSS/JS inline) so it publishes in one request.
+    3. Publish the whole file to ht-ml.app.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- REPLACE: page title shown in the browser tab -->
+<title>PR #312 — Debounce notification worker | Reviewer Writeup</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --panel: #171a22;
+    --panel-2: #1d212c;
+    --border: #2a2f3c;
+    --text: #e6e9ef;
+    --muted: #9aa3b2;
+    --accent: #6ea8fe;
+    --accent-soft: rgba(110, 168, 254, 0.12);
+    --add: #4ade80;
+    --add-bg: rgba(74, 222, 128, 0.10);
+    --del: #f87171;
+    --del-bg: rgba(248, 113, 113, 0.10);
+    --warn: #fbbf24;
+    --radius: 12px;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --panel-2: #f0f2f5;
+      --border: #e1e4ea;
+      --text: #1a1d24;
+      --muted: #5b6472;
+      --accent: #2563eb;
+      --accent-soft: rgba(37, 99, 235, 0.08);
+      --add: #16a34a;
+      --add-bg: rgba(22, 163, 74, 0.08);
+      --del: #dc2626;
+      --del-bg: rgba(220, 38, 38, 0.08);
+      --warn: #b45309;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    font-size: 16px;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 0 20px 96px; }
+
+  /* Header */
+  header.pr {
+    padding: 48px 0 28px;
+    border-bottom: 1px solid var(--border);
+  }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--mono); font-size: 13px; color: var(--accent);
+    background: var(--accent-soft); padding: 5px 12px; border-radius: 999px;
+    margin-bottom: 18px;
+  }
+  h1 {
+    font-size: clamp(1.7rem, 4vw, 2.4rem);
+    line-height: 1.2; margin: 0 0 16px; letter-spacing: -0.02em;
+  }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 8px 10px;
+    font-family: var(--mono); font-size: 13px; color: var(--muted);
+  }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--panel); border: 1px solid var(--border);
+    padding: 4px 11px; border-radius: 8px;
+  }
+  .chip svg { width: 14px; height: 14px; opacity: 0.8; }
+  .stat-add { color: var(--add); }
+  .stat-del { color: var(--del); }
+
+  /* Sections */
+  section { padding-top: 44px; }
+  h2 {
+    font-size: 1.35rem; margin: 0 0 6px; letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 10px;
+  }
+  h2 svg { width: 20px; height: 20px; color: var(--accent); flex: none; }
+  .section-sub { color: var(--muted); margin: 0 0 20px; font-size: 0.95rem; }
+  p { margin: 0 0 14px; }
+  a { color: var(--accent); }
+
+  /* TL;DR callout */
+  .tldr {
+    background: var(--accent-soft);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 18px 20px; margin-top: 28px;
+  }
+  .tldr p { margin: 0; }
+  .tldr strong { color: var(--text); }
+
+  /* Before / After */
+  .ba-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .ba-card {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px 20px;
+  }
+  .ba-card h3 {
+    margin: 0 0 12px; font-size: 0.8rem; text-transform: uppercase;
+    letter-spacing: 0.08em; font-family: var(--mono);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .ba-before h3 { color: var(--del); }
+  .ba-after h3 { color: var(--add); }
+  .ba-card ul { margin: 0; padding-left: 18px; }
+  .ba-card li { margin-bottom: 8px; color: var(--muted); }
+  .ba-card li::marker { color: inherit; }
+
+  /* File-by-file */
+  .file { margin-bottom: 14px; }
+  .file-head {
+    width: 100%; text-align: left; cursor: pointer;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px 16px;
+    display: flex; align-items: center; gap: 12px;
+    font: inherit; color: var(--text);
+  }
+  .file-head:hover { border-color: var(--accent); }
+  .file-head:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .file-path { font-family: var(--mono); font-size: 0.9rem; flex: 1; word-break: break-all; }
+  .file-tag {
+    font-family: var(--mono); font-size: 11px; padding: 2px 8px;
+    border-radius: 6px; flex: none; text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .tag-new { background: var(--add-bg); color: var(--add); }
+  .tag-mod { background: var(--accent-soft); color: var(--accent); }
+  .tag-del { background: var(--del-bg); color: var(--del); }
+  .file-counts { font-family: var(--mono); font-size: 12px; flex: none; }
+  .chevron { width: 16px; height: 16px; flex: none; color: var(--muted); transition: transform 0.18s ease; }
+  .file[open] .chevron { transform: rotate(90deg); }
+  .file-body {
+    border: 1px solid var(--border); border-top: none;
+    border-radius: 0 0 var(--radius) var(--radius);
+    padding: 16px; margin-top: -8px; background: var(--panel-2);
+  }
+  .file[open] .file-head { border-radius: var(--radius) var(--radius) 0 0; }
+  .file-body p:last-child { margin-bottom: 0; }
+  details > summary { list-style: none; }
+  details > summary::-webkit-details-marker { display: none; }
+
+  /* Code */
+  pre {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 16px; overflow-x: auto;
+    font-family: var(--mono); font-size: 0.85rem; line-height: 1.55;
+    margin: 12px 0;
+  }
+  code { font-family: var(--mono); font-size: 0.88em; }
+  p code, li code {
+    background: var(--panel-2); border: 1px solid var(--border);
+    padding: 1px 6px; border-radius: 5px;
+  }
+  .ln-add { color: var(--add); display: block; background: var(--add-bg); }
+  .ln-del { color: var(--del); display: block; background: var(--del-bg); }
+
+  /* Focus / numbered guidance */
+  ol.focus { counter-reset: step; list-style: none; padding: 0; margin: 0; }
+  ol.focus li {
+    position: relative; padding: 14px 16px 14px 52px; margin-bottom: 10px;
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+  }
+  ol.focus li::before {
+    counter-increment: step; content: counter(step);
+    position: absolute; left: 14px; top: 14px;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--accent-soft); color: var(--accent);
+    display: grid; place-items: center; font-family: var(--mono);
+    font-size: 13px; font-weight: 600;
+  }
+  ol.focus strong { display: block; margin-bottom: 2px; }
+  ol.focus span { color: var(--muted); font-size: 0.93rem; }
+
+  /* Test plan list */
+  .checks { list-style: none; padding: 0; margin: 0; }
+  .checks li {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 9px 0; border-bottom: 1px solid var(--border);
+  }
+  .checks li:last-child { border-bottom: none; }
+  .checks svg { width: 18px; height: 18px; flex: none; color: var(--add); margin-top: 2px; }
+
+  footer {
+    margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--border);
+    color: var(--muted); font-size: 0.88rem;
+  }
+  @media (max-width: 600px) {
+    .ba-grid { grid-template-columns: 1fr; }
+    header.pr { padding-top: 36px; }
+  }
+</style>
+</head>
+<body>
+<main class="wrap">
+
+  <!-- ============ HEADER ============ -->
+  <header class="pr">
+    <!-- REPLACE: PR number / status label -->
+    <span class="eyebrow">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M6 9v6M13 6h3a2 2 0 0 1 2 2v7"/><circle cx="18" cy="18" r="3"/></svg>
+      PR #312 · Ready for review
+    </span>
+    <!-- REPLACE: a clear, descriptive PR title -->
+    <h1>Debounce the notification worker to stop duplicate emails</h1>
+    <div class="meta">
+      <!-- REPLACE: branch, author, and diff stats -->
+      <span class="chip">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="M6 9v6a6 6 0 0 0 6 6h6"/></svg>
+        fix/notify-debounce → main
+      </span>
+      <span class="chip">@yourhandle</span>
+      <span class="chip">7 files</span>
+      <span class="chip"><span class="stat-add">+184</span>&nbsp;<span class="stat-del">−63</span></span>
+    </div>
+  </header>
+
+  <!-- ============ TL;DR ============ -->
+  <div class="tldr">
+    <!-- REPLACE: one-paragraph summary a reviewer can read in 15 seconds -->
+    <p><strong>TL;DR —</strong> Users received the same notification email up to five times during traffic spikes because the worker fired once per event with no coalescing. This PR adds a 30-second debounce keyed on <code>(user_id, event_type)</code>, backed by Redis, and drops duplicates before send. No schema changes; safe to roll back by toggling the <code>NOTIFY_DEBOUNCE</code> flag.</p>
+  </div>
+
+  <!-- ============ WHY ============ -->
+  <section id="why">
+    <h2>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+      Why this change
+    </h2>
+    <!-- REPLACE: the motivation — what problem, who it affects, why now -->
+    <p class="section-sub">The motivation, the impact, and what triggered the work.</p>
+    <p>Support flagged 40+ tickets last week about repeated "Your order shipped" emails. Root cause: each shipment event re-enqueued a job, and the worker had no idea a near-identical job had just run. During the Black Friday rehearsal this multiplied — one user got eleven copies.</p>
+
+    <div class="ba-grid">
+      <div class="ba-card ba-before">
+        <h3>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+          Before
+        </h3>
+        <ul>
+          <!-- REPLACE: the painful old behavior, as bullet points -->
+          <li>Every event triggered an immediate send, no coalescing.</li>
+          <li>Duplicate jobs ran in parallel with no shared state.</li>
+          <li>5×+ duplicate emails under load; angry users.</li>
+        </ul>
+      </div>
+      <div class="ba-card ba-after">
+        <h3>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9"/></svg>
+          After
+        </h3>
+        <ul>
+          <!-- REPLACE: the new behavior and the win -->
+          <li>Events are debounced 30s per <code>(user, type)</code>.</li>
+          <li>A Redis lock guarantees one send per window.</li>
+          <li>Zero duplicates across a 50k-event load test.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FILE-BY-FILE ============ -->
+  <section id="files">
+    <h2>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>
+      File-by-file
+    </h2>
+    <p class="section-sub">Click a file to expand the reasoning and the key diff. Start with the ones marked important.</p>
+
+    <!-- REPLACE: one <details> block per meaningful file. Duplicate as needed. -->
+    <details class="file" open>
+      <summary class="file-head">
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+        <span class="file-path">packages/notify/src/worker.ts</span>
+        <span class="file-tag tag-mod">modified</span>
+        <span class="file-counts"><span class="stat-add">+62</span> <span class="stat-del">−18</span></span>
+      </summary>
+      <div class="file-body">
+        <p>The heart of the change. Before sending, the worker now claims a debounce key. If the key already exists, the job exits early — the in-flight job will send the latest state.</p>
+        <pre><code><span class="ln-del">- await mailer.send(buildEmail(event));</span>
+<span class="ln-add">+ const key = `notify:${event.userId}:${event.type}`;</span>
+<span class="ln-add">+ const claimed = await redis.set(key, "1", "NX", "EX", 30);</span>
+<span class="ln-add">+ if (!claimed) return; // a recent job owns this window</span>
+<span class="ln-add">+ await mailer.send(buildEmail(event));</span></code></pre>
+      </div>
+    </details>
+
+    <details class="file">
+      <summary class="file-head">
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+        <span class="file-path">packages/notify/src/debounce.ts</span>
+        <span class="file-tag tag-new">new</span>
+        <span class="file-counts"><span class="stat-add">+71</span></span>
+      </summary>
+      <div class="file-body">
+        <p>New helper that wraps the Redis claim logic so it can be unit-tested in isolation and reused by future workers. Exposes <code>claimWindow()</code> and <code>releaseWindow()</code>.</p>
+      </div>
+    </details>
+
+    <details class="file">
+      <summary class="file-head">
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+        <span class="file-path">packages/notify/src/legacy-dedupe.ts</span>
+        <span class="file-tag tag-del">removed</span>
+        <span class="file-counts"><span class="stat-del">−45</span></span>
+      </summary>
+      <div class="file-body">
+        <p>Deleted the old in-memory dedupe set — it never worked across worker instances, which is exactly why the bug existed. The new Redis-backed approach replaces it entirely.</p>
+      </div>
+    </details>
+
+    <details class="file">
+      <summary class="file-head">
+        <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+        <span class="file-path">packages/notify/test/debounce.test.ts</span>
+        <span class="file-tag tag-new">new</span>
+        <span class="file-counts"><span class="stat-add">+51</span></span>
+      </summary>
+      <div class="file-body">
+        <p>Covers the happy path, the duplicate-claim path, and key expiry. Uses a fake Redis clock so the 30s window is deterministic.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- ============ WHERE TO FOCUS ============ -->
+  <section id="focus">
+    <h2>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+      Where to focus your review
+    </h2>
+    <p class="section-sub">If you only have ten minutes, look here.</p>
+    <ol class="focus">
+      <!-- REPLACE: the specific things you most want eyes on -->
+      <li><strong>The Redis claim semantics in <code>worker.ts</code></strong><span>Is <code>SET NX EX</code> the right primitive, or should this be a Lua script for atomicity with release?</span></li>
+      <li><strong>The 30-second window</strong><span>Is this too long for time-sensitive emails like password resets? Should it vary by <code>event.type</code>?</span></li>
+      <li><strong>Failure mode if Redis is down</strong><span>We currently fail open (send anyway). Confirm that's the behavior we want.</span></li>
+    </ol>
+  </section>
+
+  <!-- ============ TEST PLAN ============ -->
+  <section id="tests">
+    <h2>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      Test plan
+    </h2>
+    <p class="section-sub">How this was verified.</p>
+    <ul class="checks">
+      <!-- REPLACE: what you actually tested -->
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg> Unit tests for claim, duplicate-claim, and expiry (new suite, 3 cases).</li>
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg> Integration test firing 200 events for one user → exactly one email.</li>
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg> 50k-event load test on staging: zero duplicates, p95 send latency unchanged.</li>
+    </ul>
+  </section>
+
+  <!-- ============ ROLLOUT ============ -->
+  <section id="rollout">
+    <h2>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 12l1.5-4.5A2 2 0 0 1 7.4 6h9.2a2 2 0 0 1 1.9 1.5L20 12v6a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1v-1H7v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><circle cx="7.5" cy="14.5" r="1"/><circle cx="16.5" cy="14.5" r="1"/></svg>
+      Rollout &amp; rollback
+    </h2>
+    <p class="section-sub">Ship plan and the escape hatch.</p>
+    <!-- REPLACE: deployment plan, flag, and how to undo it -->
+    <p>Guarded by the <code>NOTIFY_DEBOUNCE</code> flag, default <strong>off</strong>. Plan: enable for internal users → 5% → 100% over three days, watching the duplicate-send dashboard. Rollback is a single flag flip; no data migration to reverse.</p>
+  </section>
+
+  <footer>
+    <!-- REPLACE: your name, links, or a thank-you -->
+    <p>Thanks for reviewing. Questions or pushback welcome — drop them on the PR and I'll respond same-day.</p>
+  </footer>
+
+</main>
+</body>
+</html>

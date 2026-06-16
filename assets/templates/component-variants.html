@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<!--
+  TEMPLATE: Component Variants
+  A single-sheet reference for a component's sizes, states, and intents.
+  HOW TO USE:
+    1. Replace the project name, component name, and intro copy below.
+    2. Edit the variant cards (buttons, badges, inputs) to match your design system.
+    3. Adjust the CSS custom properties in :root to rebrand colors, radius, and spacing.
+    4. Everything is self-contained — no external CSS/JS/fonts/images. Works offline.
+  Publish the whole file as-is to ht-ml.app.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- REPLACE: page title shown in browser tab -->
+<title>Component Variants — Acme Design System</title>
+<style>
+  :root {
+    /* REPLACE: brand palette — change these to rebrand the whole sheet */
+    --bg: #f7f7f9;
+    --panel: #ffffff;
+    --ink: #16181d;
+    --muted: #6b7280;
+    --line: #e6e7eb;
+    --line-strong: #d3d5dc;
+    --brand: #5b5bd6;
+    --brand-ink: #ffffff;
+    --brand-soft: #ecebff;
+    --success: #18794e;
+    --success-soft: #e6f6ec;
+    --warning: #9a6700;
+    --warning-soft: #fcf3d6;
+    --danger: #cf2e2e;
+    --danger-soft: #fdecec;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 1px 2px rgba(16,18,29,.06), 0 8px 24px rgba(16,18,29,.06);
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0e0f13;
+      --panel: #181a20;
+      --ink: #f3f4f6;
+      --muted: #9aa0ac;
+      --line: #292c34;
+      --line-strong: #3a3e48;
+      --brand: #7c7cf0;
+      --brand-soft: #23234a;
+      --success-soft: #14301f;
+      --warning-soft: #332a0f;
+      --danger-soft: #381b1b;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.4);
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  header.page { margin-bottom: 28px; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+    color: var(--brand); background: var(--brand-soft);
+    padding: 5px 10px; border-radius: 999px;
+  }
+  h1 { font-size: clamp(28px, 4vw, 40px); line-height: 1.1; margin: 14px 0 8px; letter-spacing: -.02em; }
+  .lede { color: var(--muted); font-size: 16px; max-width: 60ch; margin: 0; }
+
+  /* Controls panel */
+  .controls {
+    display: flex; flex-wrap: wrap; gap: 18px 28px; align-items: center;
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 16px 20px; margin: 26px 0 36px;
+    box-shadow: var(--shadow);
+  }
+  .ctrl { display: flex; flex-direction: column; gap: 6px; }
+  .ctrl > span { font-size: 12px; font-weight: 600; color: var(--muted); }
+  .ctrl-row { display: flex; align-items: center; gap: 10px; }
+  .seg { display: inline-flex; border: 1px solid var(--line-strong); border-radius: 999px; padding: 3px; gap: 2px; background: var(--bg); }
+  .seg button {
+    font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+    border: 0; background: transparent; color: var(--muted);
+    padding: 6px 14px; border-radius: 999px; transition: background .15s, color .15s;
+  }
+  .seg button[aria-pressed="true"] { background: var(--brand); color: var(--brand-ink); }
+  .switch { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; font-weight: 600; }
+  .switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+  .track { width: 38px; height: 22px; border-radius: 999px; background: var(--line-strong); position: relative; transition: background .15s; flex: none; }
+  .track::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .15s; box-shadow: 0 1px 2px rgba(0,0,0,.3); }
+  .switch input:checked + .track { background: var(--brand); }
+  .switch input:checked + .track::after { transform: translateX(16px); }
+  .switch input:focus-visible + .track { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+  /* Section + matrix */
+  section { margin-bottom: 44px; }
+  .sec-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 16px; }
+  .sec-head h2 { font-size: 20px; margin: 0; letter-spacing: -.01em; }
+  .sec-head p { margin: 0; color: var(--muted); font-size: 14px; }
+
+  .matrix {
+    display: grid; gap: 14px;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
+  .cell {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 18px;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .cell.shadow { box-shadow: var(--shadow); }
+  .cell .label { font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+  .cell .stack { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .cell .stack.col { flex-direction: column; align-items: stretch; }
+
+  /* Buttons */
+  .btn {
+    font: inherit; font-weight: 600; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 8px; justify-content: center;
+    border: 1px solid transparent; border-radius: var(--radius-sm);
+    padding: 9px 16px; font-size: 14px; line-height: 1;
+    transition: filter .15s, background .15s, border-color .15s, transform .05s;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+  .btn svg { width: 16px; height: 16px; }
+  .btn.sm { padding: 6px 11px; font-size: 12px; }
+  .btn.lg { padding: 12px 22px; font-size: 16px; }
+  .btn.primary { background: var(--brand); color: var(--brand-ink); }
+  .btn.primary:hover { filter: brightness(1.07); }
+  .btn.secondary { background: var(--panel); color: var(--ink); border-color: var(--line-strong); }
+  .btn.secondary:hover { background: var(--bg); }
+  .btn.ghost { background: transparent; color: var(--brand); }
+  .btn.ghost:hover { background: var(--brand-soft); }
+  .btn.danger { background: var(--danger); color: #fff; }
+  .btn.danger:hover { filter: brightness(1.07); }
+  .btn[disabled] { opacity: .5; cursor: not-allowed; }
+  .btn.loading { color: transparent; position: relative; pointer-events: none; }
+  .btn.loading::after {
+    content: ""; position: absolute; width: 15px; height: 15px; border-radius: 50%;
+    border: 2px solid currentColor; border-top-color: transparent; color: var(--brand-ink);
+    animation: spin .7s linear infinite;
+  }
+  .btn.secondary.loading::after, .btn.ghost.loading::after { color: var(--brand); }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Badges */
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px;
+    border: 1px solid transparent;
+  }
+  .badge.lg { font-size: 13px; padding: 5px 12px; }
+  .badge .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .badge.neutral { background: var(--bg); color: var(--muted); border-color: var(--line-strong); }
+  .badge.brand { background: var(--brand-soft); color: var(--brand); }
+  .badge.success { background: var(--success-soft); color: var(--success); }
+  .badge.warning { background: var(--warning-soft); color: var(--warning); }
+  .badge.danger { background: var(--danger-soft); color: var(--danger); }
+
+  /* Inputs */
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: 12px; font-weight: 600; color: var(--muted); }
+  .input {
+    font: inherit; font-size: 14px; color: var(--ink);
+    background: var(--panel); border: 1px solid var(--line-strong);
+    border-radius: var(--radius-sm); padding: 9px 12px; width: 100%;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .input::placeholder { color: var(--muted); }
+  .input:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
+  .input.sm { padding: 6px 10px; font-size: 13px; }
+  .input.lg { padding: 12px 14px; font-size: 16px; }
+  .input.invalid { border-color: var(--danger); box-shadow: 0 0 0 3px var(--danger-soft); }
+  .input[disabled] { background: var(--bg); color: var(--muted); cursor: not-allowed; }
+  .hint { font-size: 12px; color: var(--muted); }
+  .hint.err { color: var(--danger); }
+
+  /* Spec readout */
+  .spec {
+    margin-top: 40px; background: var(--panel); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow);
+  }
+  .spec h3 { margin: 0 0 10px; font-size: 14px; }
+  .spec code { font-family: var(--mono); font-size: 13px; color: var(--brand); }
+  .spec pre {
+    margin: 0; font-family: var(--mono); font-size: 13px; line-height: 1.7;
+    background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-sm);
+    padding: 14px 16px; overflow-x: auto; color: var(--ink);
+  }
+
+  footer { margin-top: 56px; color: var(--muted); font-size: 13px; text-align: center; }
+  footer a { color: var(--brand); text-decoration: none; }
+
+  @media (max-width: 560px) {
+    .controls { flex-direction: column; align-items: stretch; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="page">
+    <!-- REPLACE: eyebrow / project name -->
+    <span class="eyebrow">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Acme Design System
+    </span>
+    <!-- REPLACE: component name -->
+    <h1>Component Variants</h1>
+    <!-- REPLACE: one-line description of what this sheet documents -->
+    <p class="lede">A single reference sheet for every size, state, and intent of our core interactive components. Toggle the controls to preview density and emphasis.</p>
+  </header>
+
+  <!-- Live controls: drive global density + shadow across the sheet -->
+  <div class="controls" role="group" aria-label="Display controls">
+    <div class="ctrl">
+      <span>Size</span>
+      <div class="seg" id="sizeSeg" role="group" aria-label="Component size">
+        <button type="button" data-size="sm" aria-pressed="false">Small</button>
+        <button type="button" data-size="md" aria-pressed="true">Medium</button>
+        <button type="button" data-size="lg" aria-pressed="false">Large</button>
+      </div>
+    </div>
+    <div class="ctrl">
+      <span>Emphasis</span>
+      <div class="ctrl-row">
+        <label class="switch">
+          <input type="checkbox" id="shadowToggle" checked>
+          <span class="track" aria-hidden="true"></span>
+          Elevate cards
+        </label>
+      </div>
+    </div>
+    <div class="ctrl">
+      <span>State preview</span>
+      <div class="ctrl-row">
+        <label class="switch">
+          <input type="checkbox" id="loadingToggle">
+          <span class="track" aria-hidden="true"></span>
+          Loading
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ BUTTONS ============ -->
+  <section aria-labelledby="sec-buttons">
+    <div class="sec-head">
+      <h2 id="sec-buttons">Buttons</h2>
+      <p>Intents &times; states. Size follows the control above.</p>
+    </div>
+    <div class="matrix">
+      <!-- REPLACE: button intents to match your system -->
+      <div class="cell shadow">
+        <span class="label">Primary</span>
+        <div class="stack">
+          <button class="btn primary js-btn" data-intent="primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            New item
+          </button>
+          <button class="btn primary js-btn" data-intent="primary" disabled>Disabled</button>
+        </div>
+      </div>
+      <div class="cell shadow">
+        <span class="label">Secondary</span>
+        <div class="stack">
+          <button class="btn secondary js-btn" data-intent="secondary">Save draft</button>
+          <button class="btn secondary js-btn" data-intent="secondary" disabled>Disabled</button>
+        </div>
+      </div>
+      <div class="cell shadow">
+        <span class="label">Ghost</span>
+        <div class="stack">
+          <button class="btn ghost js-btn" data-intent="ghost">Cancel</button>
+          <button class="btn ghost js-btn" data-intent="ghost" disabled>Disabled</button>
+        </div>
+      </div>
+      <div class="cell shadow">
+        <span class="label">Danger</span>
+        <div class="stack">
+          <button class="btn danger js-btn" data-intent="danger">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+            Delete
+          </button>
+          <button class="btn danger js-btn" data-intent="danger" disabled>Disabled</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ BADGES ============ -->
+  <section aria-labelledby="sec-badges">
+    <div class="sec-head">
+      <h2 id="sec-badges">Badges</h2>
+      <p>Status intents at two sizes.</p>
+    </div>
+    <div class="matrix">
+      <!-- REPLACE: badge labels/intents -->
+      <div class="cell shadow">
+        <span class="label">Default size</span>
+        <div class="stack">
+          <span class="badge neutral"><span class="dot"></span>Draft</span>
+          <span class="badge brand"><span class="dot"></span>Active</span>
+          <span class="badge success"><span class="dot"></span>Shipped</span>
+          <span class="badge warning"><span class="dot"></span>Review</span>
+          <span class="badge danger"><span class="dot"></span>Blocked</span>
+        </div>
+      </div>
+      <div class="cell shadow">
+        <span class="label">Large size</span>
+        <div class="stack">
+          <span class="badge neutral lg"><span class="dot"></span>Draft</span>
+          <span class="badge brand lg"><span class="dot"></span>Active</span>
+          <span class="badge success lg"><span class="dot"></span>Shipped</span>
+          <span class="badge warning lg"><span class="dot"></span>Review</span>
+          <span class="badge danger lg"><span class="dot"></span>Blocked</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ INPUTS ============ -->
+  <section aria-labelledby="sec-inputs">
+    <div class="sec-head">
+      <h2 id="sec-inputs">Inputs</h2>
+      <p>Default, focus-ready, error, and disabled states. Size follows the control above.</p>
+    </div>
+    <div class="matrix">
+      <!-- REPLACE: field labels/placeholders -->
+      <div class="cell shadow">
+        <span class="label">Default</span>
+        <div class="field">
+          <label for="in1">Project name</label>
+          <input class="input js-input" id="in1" type="text" placeholder="Q2 Roadmap" value="Q2 Roadmap">
+          <span class="hint">Visible to your whole team.</span>
+        </div>
+      </div>
+      <div class="cell shadow">
+        <span class="label">Error</span>
+        <div class="field">
+          <label for="in2">Slug</label>
+          <input class="input js-input invalid" id="in2" type="text" value="q2 roadmap!" aria-invalid="true" aria-describedby="in2err">
+          <span class="hint err" id="in2err">Only lowercase letters, numbers, and dashes.</span>
+        </div>
+      </div>
+      <div class="cell shadow">
+        <span class="label">Disabled</span>
+        <div class="field">
+          <label for="in3">Owner</label>
+          <input class="input js-input" id="in3" type="text" value="you@acme.com" disabled>
+          <span class="hint">Set by your admin.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Live readout of the current control selection -->
+  <div class="spec" aria-live="polite">
+    <h3>Current configuration</h3>
+    <pre id="specOut"><code>&lt;Button size="md" loading={false} /&gt;</code></pre>
+  </div>
+
+  <footer>
+    <!-- REPLACE: footer / attribution -->
+    Built with the Acme Design System · Published on <a href="https://ht-ml.app">ht-ml.app</a>
+  </footer>
+
+</div>
+
+<script>
+  (function () {
+    var sizeSeg = document.getElementById('sizeSeg');
+    var shadowToggle = document.getElementById('shadowToggle');
+    var loadingToggle = document.getElementById('loadingToggle');
+    var specOut = document.getElementById('specOut');
+    var state = { size: 'md', shadow: true, loading: false };
+
+    var btns = Array.prototype.slice.call(document.querySelectorAll('.js-btn'));
+    var inputs = Array.prototype.slice.call(document.querySelectorAll('.js-input'));
+    var cells = Array.prototype.slice.call(document.querySelectorAll('.cell'));
+
+    function apply() {
+      // size on buttons + inputs
+      btns.forEach(function (b) {
+        b.classList.remove('sm', 'lg');
+        if (state.size !== 'md') b.classList.add(state.size);
+        // loading only affects primary (non-disabled) for a realistic demo
+        if (state.loading && b.dataset.intent === 'primary' && !b.disabled) {
+          b.classList.add('loading');
+        } else {
+          b.classList.remove('loading');
+        }
+      });
+      inputs.forEach(function (i) {
+        i.classList.remove('sm', 'lg');
+        if (state.size !== 'md') i.classList.add(state.size);
+      });
+      cells.forEach(function (c) {
+        c.classList.toggle('shadow', state.shadow);
+      });
+      specOut.innerHTML = '<code>&lt;Button size="' + state.size +
+        '" loading={' + state.loading + '} /&gt;</code>';
+    }
+
+    sizeSeg.addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-size]');
+      if (!b) return;
+      state.size = b.dataset.size;
+      sizeSeg.querySelectorAll('button').forEach(function (x) {
+        x.setAttribute('aria-pressed', String(x === b));
+      });
+      apply();
+    });
+    shadowToggle.addEventListener('change', function () { state.shadow = shadowToggle.checked; apply(); });
+    loadingToggle.addEventListener('change', function () { state.loading = loadingToggle.checked; apply(); });
+
+    apply();
+  })();
+</script>
+</body>
+</html>

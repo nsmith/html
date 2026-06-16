@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<!--
+  TEMPLATE: Prompt Tuner
+  A self-contained prompt-template editor with live variable substitution.
+  HOW TO USE:
+    1. Edit the prompt template in the left textarea. Use {{variable}} syntax for slots.
+    2. Variable inputs are auto-generated from your template; fill them in to see the
+       rendered output update live on the right.
+    3. Customize the spots marked with <!-- REPLACE: ... --> comments below.
+  Everything is inline (CSS + JS). No external resources. Works offline.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- REPLACE: page title shown in the browser tab -->
+<title>Prompt Tuner</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #171a23;
+    --surface-2: #1e222e;
+    --border: #2a2f3d;
+    --border-soft: #232838;
+    --text: #e8eaf0;
+    --text-dim: #9aa3b8;
+    --text-faint: #6b7488;
+    --accent: #7c8cff;
+    --accent-soft: rgba(124, 140, 255, 0.14);
+    --accent-strong: #9aa8ff;
+    --warn: #ffb454;
+    --warn-soft: rgba(255, 180, 84, 0.14);
+    --ok: #5ad19a;
+    --radius: 12px;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+  }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  a { color: var(--accent-strong); }
+
+  header.site {
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border-soft);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .logo {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: linear-gradient(135deg, var(--accent) 0%, #b06cff 100%);
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    color: #fff;
+  }
+
+  .titles h1 {
+    font-size: 1.02rem;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  .titles .crumb {
+    margin: 2px 0 0;
+    font-size: 0.76rem;
+    color: var(--text-faint);
+    font-family: var(--mono);
+  }
+
+  .spacer { flex: 1 1 auto; }
+
+  .badge {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 4px 11px;
+    background: var(--surface);
+  }
+
+  main {
+    flex: 1 1 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border-soft);
+    min-height: 0;
+  }
+
+  .pane {
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    min-width: 0;
+  }
+
+  .pane-head {
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+
+  .pane-head h2 {
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 0;
+    color: var(--text-dim);
+    font-weight: 600;
+  }
+
+  .pane-body {
+    padding: 18px 20px;
+    overflow: auto;
+    flex: 1 1 auto;
+  }
+
+  label {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+
+  textarea, input[type="text"] {
+    width: 100%;
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 11px 13px;
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    line-height: 1.55;
+    resize: vertical;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+
+  textarea:focus, input[type="text"]:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+
+  textarea#template {
+    min-height: 200px;
+  }
+
+  .toolbar {
+    display: flex;
+    gap: 8px;
+    margin: 10px 0 4px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  button {
+    font-family: var(--sans);
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 13px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  button:hover { background: #262b3a; border-color: #353c4f; }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.primary:hover { background: var(--accent-strong); }
+
+  .meta {
+    font-size: 0.74rem;
+    color: var(--text-faint);
+    font-family: var(--mono);
+    margin-left: auto;
+  }
+
+  .hint {
+    font-size: 0.76rem;
+    color: var(--text-faint);
+    margin: 8px 0 0;
+  }
+  .hint code {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 1px 6px;
+    font-family: var(--mono);
+    color: var(--accent-strong);
+  }
+
+  .section-divider {
+    margin: 22px 0 14px;
+    border: 0;
+    border-top: 1px solid var(--border-soft);
+  }
+
+  .vars-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .vars-title h3 {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    margin: 0;
+    font-weight: 600;
+  }
+  .vars-title .count {
+    font-size: 0.72rem;
+    color: var(--text-faint);
+    font-family: var(--mono);
+  }
+
+  .var-field { margin-bottom: 12px; }
+  .var-field label code {
+    font-family: var(--mono);
+    color: var(--accent-strong);
+  }
+
+  .empty-vars {
+    font-size: 0.82rem;
+    color: var(--text-faint);
+    padding: 14px;
+    border: 1px dashed var(--border);
+    border-radius: 9px;
+    text-align: center;
+  }
+
+  /* Output pane */
+  .output {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    font-family: var(--mono);
+    font-size: 0.86rem;
+    line-height: 1.65;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--text);
+  }
+
+  .output .filled {
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    border-radius: 4px;
+    padding: 1px 4px;
+  }
+  .output .missing {
+    color: var(--warn);
+    background: var(--warn-soft);
+    border-bottom: 1px dashed var(--warn);
+    border-radius: 4px 4px 0 0;
+    padding: 1px 4px;
+  }
+
+  .out-meta {
+    margin-top: 12px;
+    display: flex;
+    gap: 16px;
+    font-size: 0.74rem;
+    color: var(--text-faint);
+    font-family: var(--mono);
+    flex-wrap: wrap;
+  }
+  .out-meta .ok { color: var(--ok); }
+  .out-meta .warn { color: var(--warn); }
+
+  .toast {
+    position: fixed;
+    bottom: 22px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 9px 16px;
+    border-radius: 9px;
+    font-size: 0.82rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s, transform 0.2s;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 760px) {
+    main { grid-template-columns: 1fr; }
+    .pane { min-height: 0; }
+  }
+</style>
+</head>
+<body>
+  <header class="site">
+    <span class="logo" aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/>
+      </svg>
+    </span>
+    <div class="titles">
+      <!-- REPLACE: product / tool name -->
+      <h1>Prompt Tuner</h1>
+      <!-- REPLACE: breadcrumb or subtitle -->
+      <p class="crumb">workspace / editor / prompt-tuner</p>
+    </div>
+    <span class="spacer"></span>
+    <span class="badge">Live preview</span>
+  </header>
+
+  <main>
+    <!-- ============ EDITOR PANE ============ -->
+    <section class="pane" aria-label="Prompt editor">
+      <div class="pane-head">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+        </svg>
+        <h2>Template</h2>
+      </div>
+      <div class="pane-body">
+        <label for="template">Prompt template</label>
+        <!-- REPLACE: the default prompt template. Use {{variable}} slots. -->
+        <textarea id="template" spellcheck="false" aria-describedby="tpl-hint">You are a {{role}} helping a customer.
+
+Tone: {{tone}}
+Task: {{task}}
+
+Customer message:
+"{{customer_message}}"
+
+Write a concise, friendly reply that addresses the customer's request and signs off as {{agent_name}}.</textarea>
+
+        <div class="toolbar">
+          <button class="primary" id="copyBtn" type="button">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+            Copy output
+          </button>
+          <button id="resetBtn" type="button">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>
+            </svg>
+            Reset
+          </button>
+          <span class="meta" id="tplMeta">0 chars</span>
+        </div>
+        <p class="hint" id="tpl-hint">Slots use <code>{{double_brace}}</code> syntax. Variable inputs below are generated automatically.</p>
+
+        <hr class="section-divider">
+
+        <div class="vars-title">
+          <h3>Variables</h3>
+          <span class="count" id="varCount"></span>
+        </div>
+        <div id="varFields"></div>
+      </div>
+    </section>
+
+    <!-- ============ PREVIEW PANE ============ -->
+    <section class="pane" aria-label="Rendered output">
+      <div class="pane-head">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-dim)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/>
+        </svg>
+        <h2>Rendered output</h2>
+      </div>
+      <div class="pane-body">
+        <div class="output" id="output" aria-live="polite" role="region" aria-label="Rendered prompt"></div>
+        <div class="out-meta">
+          <span id="outChars">0 chars</span>
+          <span id="outTokens">~0 tokens</span>
+          <span id="outMissing"></span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---- Default sample values for the starter variables ----
+  // REPLACE: defaults map keyed by variable name. Unknown vars start blank.
+  var DEFAULTS = {
+    role: "support specialist",
+    tone: "warm and professional",
+    task: "explain how to reset their password",
+    customer_message: "Hi, I can't log in and the reset link never arrives.",
+    agent_name: "Alex"
+  };
+
+  var SLOT_RE = /\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g;
+
+  var templateEl = document.getElementById("template");
+  var varFieldsEl = document.getElementById("varFields");
+  var outputEl    = document.getElementById("output");
+  var values = {}; // current variable values
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  // Extract unique slot names in order of first appearance.
+  function extractVars(tpl) {
+    var seen = {}, list = [], m;
+    SLOT_RE.lastIndex = 0;
+    while ((m = SLOT_RE.exec(tpl)) !== null) {
+      if (!seen[m[1]]) { seen[m[1]] = true; list.push(m[1]); }
+    }
+    return list;
+  }
+
+  function prettyLabel(name) {
+    return name.replace(/_/g, " ").replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+  }
+
+  // Rebuild the variable input fields, preserving any user-entered values.
+  function buildFields() {
+    var vars = extractVars(templateEl.value);
+    document.getElementById("varCount").textContent =
+      vars.length + (vars.length === 1 ? " slot" : " slots");
+
+    if (vars.length === 0) {
+      varFieldsEl.innerHTML =
+        '<div class="empty-vars">No {{slots}} found. Add one to your template to create a variable input.</div>';
+      return;
+    }
+
+    varFieldsEl.innerHTML = "";
+    vars.forEach(function (name) {
+      if (!(name in values)) {
+        values[name] = (name in DEFAULTS) ? DEFAULTS[name] : "";
+      }
+      var field = document.createElement("div");
+      field.className = "var-field";
+
+      var label = document.createElement("label");
+      label.setAttribute("for", "var-" + name);
+      label.innerHTML = "<code>{{" + escapeHtml(name) + "}}</code> &middot; " + escapeHtml(prettyLabel(name));
+
+      var input = document.createElement("input");
+      input.type = "text";
+      input.id = "var-" + name;
+      input.value = values[name];
+      input.placeholder = "Enter " + prettyLabel(name).toLowerCase() + "...";
+      input.addEventListener("input", function () {
+        values[name] = input.value;
+        render();
+      });
+
+      field.appendChild(label);
+      field.appendChild(input);
+      varFieldsEl.appendChild(field);
+    });
+  }
+
+  function estimateTokens(text) {
+    // Rough heuristic: ~4 chars per token.
+    return Math.max(0, Math.ceil(text.length / 4));
+  }
+
+  function render() {
+    var tpl = templateEl.value;
+    var missing = 0;
+
+    // Build highlighted HTML over the escaped template.
+    var html = escapeHtml(tpl).replace(SLOT_RE, function (_full, rawName) {
+      // rawName has no surrounding braces; re-trim defensively.
+      var name = rawName.trim();
+      var val = values[name];
+      if (val !== undefined && val !== "") {
+        return '<span class="filled">' + escapeHtml(val) + "</span>";
+      }
+      missing++;
+      return '<span class="missing">{{' + escapeHtml(name) + "}}</span>";
+    });
+
+    // Build the plain substituted text (used for copy + char/token counts).
+    var plain = tpl.replace(SLOT_RE, function (_f, rawName) {
+      var name = rawName.trim();
+      var v = values[name];
+      return (v !== undefined && v !== "") ? v : "{{" + name + "}}";
+    });
+
+    outputEl.innerHTML = html || '<span style="color:var(--text-faint)">Your rendered prompt appears here.</span>';
+
+    document.getElementById("tplMeta").textContent = tpl.length + " chars";
+    document.getElementById("outChars").textContent = plain.length + " chars";
+    document.getElementById("outTokens").textContent = "~" + estimateTokens(plain) + " tokens";
+
+    var miss = document.getElementById("outMissing");
+    if (missing > 0) {
+      miss.innerHTML = '<span class="warn">' + missing +
+        (missing === 1 ? " slot unfilled" : " slots unfilled") + "</span>";
+    } else {
+      miss.innerHTML = '<span class="ok">all slots filled</span>';
+    }
+  }
+
+  function rebuildAndRender() {
+    buildFields();
+    render();
+  }
+
+  // ---- Toast helper ----
+  var toastTimer;
+  function toast(msg) {
+    var t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.classList.remove("show"); }, 1800);
+  }
+
+  // ---- Copy rendered output (plain, slots substituted) ----
+  document.getElementById("copyBtn").addEventListener("click", function () {
+    var tpl = templateEl.value;
+    var plain = tpl.replace(SLOT_RE, function (_f, rawName) {
+      var name = rawName.trim();
+      var v = values[name];
+      return (v !== undefined && v !== "") ? v : "{{" + name + "}}";
+    });
+    var done = function () { toast("Output copied to clipboard"); };
+    var fallback = function () {
+      try {
+        var ta = document.createElement("textarea");
+        ta.value = plain;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        done();
+      } catch (e) { toast("Copy failed — select manually"); }
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(plain).then(done, fallback);
+    } else {
+      fallback();
+    }
+  });
+
+  // ---- Reset to defaults ----
+  var ORIGINAL_TEMPLATE = templateEl.value;
+  document.getElementById("resetBtn").addEventListener("click", function () {
+    templateEl.value = ORIGINAL_TEMPLATE;
+    values = {};
+    rebuildAndRender();
+    toast("Reset to defaults");
+  });
+
+  // ---- Re-extract variables whenever the template changes ----
+  templateEl.addEventListener("input", rebuildAndRender);
+
+  // ---- Init ----
+  rebuildAndRender();
+})();
+</script>
+</body>
+</html>

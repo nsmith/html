@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<!--
+  TEMPLATE: Incident Timeline (post-mortem)
+  HOW TO USE:
+    1. Replace every <!-- REPLACE: ... --> marker and the obvious placeholder text below.
+    2. Update the summary box (severity / impact / duration), the minute-by-minute
+       timeline, the root cause, and the follow-up action checklist.
+    3. Save and publish to ht-ml.app as a single self-contained HTML file.
+  NOTES: No external resources. All CSS/JS is inline. Works offline. Edit text directly.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- REPLACE: page title shown in the browser tab and search results -->
+<title>Incident INC-2025-0731 — Elevated checkout errors</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --panel: #171a23;
+    --panel-2: #1d212c;
+    --border: #2a2f3c;
+    --text: #e7eaf0;
+    --muted: #9aa3b2;
+    --accent: #6ea8fe;
+    --sev: #f0883e;      /* severity accent (orange = warning) */
+    --ok: #3fb950;
+    --bad: #f85149;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 820px; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
+  a { color: var(--accent); }
+
+  /* Header */
+  header { border-bottom: 1px solid var(--border); padding-bottom: 1.5rem; margin-bottom: 1.75rem; }
+  .eyebrow { font-family: var(--mono); font-size: .8rem; color: var(--muted); letter-spacing: .04em; }
+  h1 { font-size: 1.9rem; line-height: 1.25; margin: .35rem 0 .9rem; font-weight: 700; }
+  .badges { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+  .badge {
+    display: inline-flex; align-items: center; gap: .4rem;
+    font-size: .8rem; font-weight: 600; padding: .3rem .65rem;
+    border-radius: 999px; border: 1px solid var(--border); background: var(--panel-2);
+  }
+  .badge.sev { color: var(--sev); border-color: color-mix(in srgb, var(--sev) 45%, var(--border)); }
+  .badge.resolved { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 45%, var(--border)); }
+  .dot { width: .55rem; height: .55rem; border-radius: 50%; background: currentColor; }
+  .meta { color: var(--muted); font-size: .9rem; margin-top: .9rem; }
+
+  /* Section headings */
+  section { margin-top: 2.5rem; scroll-margin-top: 1rem; }
+  h2 {
+    font-size: 1.05rem; text-transform: uppercase; letter-spacing: .08em;
+    color: var(--muted); font-weight: 700; margin: 0 0 1rem;
+    display: flex; align-items: center; gap: .55rem;
+  }
+  h2 svg { flex: none; }
+
+  /* Summary box */
+  .summary {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+    background: var(--border); border: 1px solid var(--border);
+    border-radius: 12px; overflow: hidden;
+  }
+  .summary div { background: var(--panel); padding: 1.1rem 1.25rem; }
+  .summary .k { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .summary .v { font-size: 1.4rem; font-weight: 700; margin-top: .25rem; }
+  .summary .v.sev { color: var(--sev); }
+
+  /* TL;DR / prose panels */
+  .panel {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.25rem 1.4rem;
+  }
+  .panel p:first-child { margin-top: 0; }
+  .panel p:last-child { margin-bottom: 0; }
+  code, .code {
+    font-family: var(--mono); font-size: .88em;
+    background: var(--panel-2); border: 1px solid var(--border);
+    padding: .1rem .4rem; border-radius: 5px;
+  }
+
+  /* Timeline */
+  .timeline { list-style: none; margin: 0; padding: 0; position: relative; }
+  .timeline::before {
+    content: ""; position: absolute; left: 7px; top: 6px; bottom: 6px;
+    width: 2px; background: var(--border);
+  }
+  .timeline li { position: relative; padding: 0 0 1.4rem 2.1rem; }
+  .timeline li:last-child { padding-bottom: 0; }
+  .timeline .marker {
+    position: absolute; left: 0; top: 5px; width: 16px; height: 16px;
+    border-radius: 50%; background: var(--panel); border: 2px solid var(--accent);
+  }
+  .timeline li.detect .marker { border-color: var(--sev); }
+  .timeline li.mitigate .marker { border-color: var(--ok); }
+  .timeline li.resolve .marker { background: var(--ok); border-color: var(--ok); }
+  .timeline time {
+    font-family: var(--mono); font-size: .82rem; color: var(--muted);
+    font-weight: 600;
+  }
+  .timeline .event { margin-top: .15rem; }
+
+  /* Impact table */
+  table { width: 100%; border-collapse: collapse; font-size: .95rem; }
+  th, td { text-align: left; padding: .7rem .9rem; border-bottom: 1px solid var(--border); }
+  thead th { color: var(--muted); font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; }
+  tbody tr:last-child td { border-bottom: none; }
+  td.num { font-family: var(--mono); }
+
+  /* Checklist */
+  .checklist { list-style: none; margin: 0; padding: 0; }
+  .checklist li {
+    display: flex; gap: .75rem; padding: .85rem 1rem; align-items: flex-start;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; margin-bottom: .6rem;
+  }
+  .checklist input[type="checkbox"] {
+    appearance: none; -webkit-appearance: none; flex: none;
+    width: 20px; height: 20px; margin-top: .15rem; cursor: pointer;
+    border: 2px solid var(--border); border-radius: 6px; background: var(--panel-2);
+    position: relative;
+  }
+  .checklist input[type="checkbox"]:checked { background: var(--ok); border-color: var(--ok); }
+  .checklist input[type="checkbox"]:checked::after {
+    content: ""; position: absolute; left: 5px; top: 1px;
+    width: 5px; height: 10px; border: solid #0f1117;
+    border-width: 0 2px 2px 0; transform: rotate(45deg);
+  }
+  .checklist input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .checklist .task { flex: 1; }
+  .checklist label { cursor: pointer; font-weight: 600; }
+  .checklist input:checked ~ .task label { text-decoration: line-through; color: var(--muted); }
+  .checklist .sub { font-size: .85rem; color: var(--muted); margin-top: .2rem; }
+  .owner {
+    font-family: var(--mono); font-size: .78rem; color: var(--accent);
+    background: var(--panel-2); border: 1px solid var(--border);
+    padding: .1rem .45rem; border-radius: 5px;
+  }
+
+  footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border);
+    color: var(--muted); font-size: .85rem; }
+
+  @media (max-width: 560px) {
+    h1 { font-size: 1.5rem; }
+    .summary { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <!-- REPLACE: incident ID -->
+    <div class="eyebrow">INC-2025-0731</div>
+    <!-- REPLACE: short, plain-language incident title -->
+    <h1>Elevated checkout errors during payment processing</h1>
+    <div class="badges">
+      <!-- REPLACE: severity level (SEV-1 highest, SEV-4 lowest) -->
+      <span class="badge sev"><span class="dot"></span>SEV-2</span>
+      <!-- REPLACE: current status -->
+      <span class="badge resolved"><span class="dot"></span>Resolved</span>
+    </div>
+    <!-- REPLACE: detection time, owner, and date -->
+    <p class="meta">Detected 09:14 UTC on 31 Jul 2025 &middot; Incident lead: A. Rivera &middot; Last updated 11:02 UTC</p>
+  </header>
+
+  <!-- ====================== SUMMARY BOX ====================== -->
+  <section aria-labelledby="summary-h">
+    <h2 id="summary-h">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/><path d="M8 5v3.5M8 11h.01"/></svg>
+      At a glance
+    </h2>
+    <div class="summary">
+      <div>
+        <div class="k">Severity</div>
+        <!-- REPLACE: severity + one-word classification -->
+        <div class="v sev">SEV-2</div>
+      </div>
+      <div>
+        <div class="k">Impact</div>
+        <!-- REPLACE: the headline impact metric -->
+        <div class="v">~6.8% of checkouts</div>
+      </div>
+      <div>
+        <div class="k">Duration</div>
+        <!-- REPLACE: total time from detection to resolution -->
+        <div class="v">38 min</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====================== TL;DR ====================== -->
+  <section aria-labelledby="tldr-h">
+    <h2 id="tldr-h">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 4h10M3 8h10M3 12h6"/></svg>
+      Summary
+    </h2>
+    <div class="panel">
+      <!-- REPLACE: 2-3 sentence plain-language summary of what happened and why -->
+      <p>A routine deploy of the payments service shipped a misconfigured retry policy
+      that exhausted the connection pool to the payment gateway. From 09:14 to 09:52 UTC,
+      roughly <strong>6.8%</strong> of checkout attempts returned <code>503</code> errors.
+      Service recovered after the change was rolled back and the pool was reset. No
+      payments were double-charged and no customer data was affected.</p>
+    </div>
+  </section>
+
+  <!-- ====================== TIMELINE ====================== -->
+  <section aria-labelledby="timeline-h">
+    <h2 id="timeline-h">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/><path d="M8 4.5V8l2.5 1.5"/></svg>
+      Timeline <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:.85rem;">(all times UTC)</span>
+    </h2>
+    <!-- REPLACE: each <li> is one event. Use class "detect", "mitigate", or "resolve" to color the marker. -->
+    <ul class="timeline">
+      <li>
+        <span class="marker"></span>
+        <time>09:08</time>
+        <div class="event">Payments service <code>v2.41.0</code> begins rolling out to production.</div>
+      </li>
+      <li class="detect">
+        <span class="marker"></span>
+        <time>09:14</time>
+        <div class="event">Error-rate alert fires; checkout <code>503</code> rate crosses 5%. On-call paged.</div>
+      </li>
+      <li>
+        <span class="marker"></span>
+        <time>09:21</time>
+        <div class="event">Investigation begins. Initial suspicion falls on the gateway provider (later ruled out).</div>
+      </li>
+      <li>
+        <span class="marker"></span>
+        <time>09:33</time>
+        <div class="event">Connection-pool saturation identified in dashboards; correlated with the 09:08 deploy.</div>
+      </li>
+      <li class="mitigate">
+        <span class="marker"></span>
+        <time>09:41</time>
+        <div class="event">Rollback of <code>v2.41.0</code> initiated; pool drained and restarted.</div>
+      </li>
+      <li class="resolve">
+        <span class="marker"></span>
+        <time>09:52</time>
+        <div class="event">Error rate returns to baseline. Incident declared resolved after 15 min of stability.</div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- ====================== ROOT CAUSE ====================== -->
+  <section aria-labelledby="cause-h">
+    <h2 id="cause-h">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M8 1.5 14.5 13H1.5L8 1.5Z"/><path d="M8 6.5v3M8 11.5h.01"/></svg>
+      Root cause
+    </h2>
+    <div class="panel">
+      <!-- REPLACE: the technical root cause and any contributing process gaps -->
+      <p>The new release set the gateway client's <code>max_retries</code> to <code>10</code>
+      with no backoff, intended only as a local test value. Under normal traffic this
+      multiplied in-flight requests roughly tenfold during transient errors, exhausting
+      the fixed-size connection pool (capacity 64).</p>
+      <p><strong>Contributing factors:</strong> the test value was not caught in review,
+      and load tests run in staging used a smaller traffic profile that never saturated
+      the pool.</p>
+    </div>
+  </section>
+
+  <!-- ====================== IMPACT ====================== -->
+  <section aria-labelledby="impact-h">
+    <h2 id="impact-h">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2 13V3M2 13h12M5 11V8M8.5 11V5M12 11V7"/></svg>
+      Impact
+    </h2>
+    <div class="panel" style="padding:.3rem .4rem;">
+      <!-- REPLACE: quantify the business/customer impact -->
+      <table>
+        <thead>
+          <tr><th>Metric</th><th>Value</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Failed checkout requests</td><td class="num">~9,400</td></tr>
+          <tr><td>Peak error rate</td><td class="num">8.1%</td></tr>
+          <tr><td>Affected customers</td><td class="num">~3,100</td></tr>
+          <tr><td>Revenue impact (est.)</td><td class="num">$42,000 delayed</td></tr>
+          <tr><td>Data loss / double charges</td><td class="num" style="color:var(--ok);">None</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ====================== ACTION ITEMS ====================== -->
+  <section aria-labelledby="actions-h">
+    <h2 id="actions-h">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M2 8.5 6 12.5 14 3.5"/></svg>
+      Follow-up action items
+    </h2>
+    <!-- REPLACE: one <li> per action. Check the box (in the browser) once done. -->
+    <ul class="checklist">
+      <li>
+        <input type="checkbox" id="a1">
+        <div class="task">
+          <label for="a1">Add backoff and a sane <code>max_retries</code> ceiling to the gateway client</label>
+          <div class="sub"><span class="owner">@platform</span> &middot; due 2025-08-05</div>
+        </div>
+      </li>
+      <li>
+        <input type="checkbox" id="a2" checked>
+        <div class="task">
+          <label for="a2">Add a connection-pool saturation alert with a 60% threshold</label>
+          <div class="sub"><span class="owner">@observability</span> &middot; done 2025-08-01</div>
+        </div>
+      </li>
+      <li>
+        <input type="checkbox" id="a3">
+        <div class="task">
+          <label for="a3">Update staging load tests to mirror production traffic profile</label>
+          <div class="sub"><span class="owner">@qa</span> &middot; due 2025-08-12</div>
+        </div>
+      </li>
+      <li>
+        <input type="checkbox" id="a4">
+        <div class="task">
+          <label for="a4">Add a review checklist item for retry/timeout config changes</label>
+          <div class="sub"><span class="owner">@payments</span> &middot; due 2025-08-08</div>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <footer>
+    <!-- REPLACE: footer attribution / contact -->
+    <p>Post-mortem authored by the incident response team. Questions? Reach out in <code>#incident-response</code>.</p>
+  </footer>
+
+</div>
+</body>
+</html>

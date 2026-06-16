@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<!--
+  TEMPLATE: Clickable Flow
+  USE CASE: A clickable prototype — several linked "screens" you navigate between
+            by clicking hotspots/buttons (no page reload). Great for demoing an
+            interaction or app flow at high fidelity.
+
+  HOW TO USE:
+   1. Search for "REPLACE:" comments and edit the placeholder text/content.
+   2. Each screen lives in its own <section class="screen" data-screen="...">.
+      To add a screen: copy a <section>, give it a unique data-screen name, add a
+      matching dot in the progress nav, and point a button at it via data-goto.
+   3. Buttons/hotspots navigate with the data-goto="screenName" attribute.
+   4. Everything is self-contained — just publish this single .html file.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- REPLACE: page title shown in the browser tab -->
+<title>Clickable Flow — Interactive Prototype</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --panel: #171a23;
+    --panel-2: #1e222e;
+    --line: #2a2f3e;
+    --text: #eef1f7;
+    --muted: #9aa3b8;
+    --accent: #6d8bff;
+    --accent-soft: rgba(109, 139, 255, 0.16);
+    --good: #4fd1a5;
+    --radius: 16px;
+    --shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+            Arial, "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  body {
+    margin: 0;
+    font-family: var(--font);
+    background:
+      radial-gradient(900px 600px at 12% -10%, #1b2030 0%, transparent 55%),
+      radial-gradient(900px 600px at 110% 120%, #1a2330 0%, transparent 55%),
+      var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+  }
+
+  .stage {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 28px 18px 12px;
+  }
+
+  /* The "device frame" that holds the prototype screens */
+  .device {
+    width: 100%;
+    max-width: 420px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 26px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .device__bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--line);
+    background: var(--panel-2);
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .device__bar .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: #3a4156;
+  }
+  .device__bar .title { margin-left: 6px; font-weight: 600; color: var(--text); }
+
+  .viewport {
+    position: relative;
+    min-height: 440px;
+  }
+
+  /* Screens stack on top of each other; only .is-active is shown */
+  .screen {
+    position: absolute;
+    inset: 0;
+    padding: 26px 22px 24px;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: opacity .28s ease, transform .28s ease, visibility .28s;
+  }
+  .screen.is-active {
+    position: relative;
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+  }
+
+  .eyebrow {
+    font-size: 12px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+    margin: 0 0 10px;
+  }
+  .screen h1 { font-size: 24px; line-height: 1.2; margin: 0 0 10px; }
+  .screen h2 { font-size: 20px; line-height: 1.25; margin: 0 0 10px; }
+  .screen p { color: var(--muted); line-height: 1.55; margin: 0 0 16px; font-size: 15px; }
+
+  .spacer { flex: 1; }
+
+  /* Reusable card / list row */
+  .card {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    text-align: left;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 10px;
+    color: var(--text);
+    font: inherit;
+    cursor: pointer;
+    transition: border-color .15s ease, transform .12s ease, background .15s ease;
+  }
+  .row:hover, .row:focus-visible { border-color: var(--accent); background: #232838; }
+  .row:active { transform: scale(.99); }
+  .row .icon {
+    flex: none;
+    width: 38px; height: 38px;
+    display: grid; place-items: center;
+    border-radius: 10px;
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+  .row .meta { min-width: 0; }
+  .row .meta strong { display: block; font-size: 15px; }
+  .row .meta span { display: block; font-size: 13px; color: var(--muted); }
+  .row .chev { margin-left: auto; color: var(--muted); flex: none; }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 14px 18px;
+    border-radius: 12px;
+    border: 1px solid transparent;
+    font: inherit;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    transition: transform .12s ease, filter .15s ease, background .15s ease;
+  }
+  .btn:active { transform: scale(.985); }
+  .btn--primary { background: var(--accent); color: #0b1020; }
+  .btn--primary:hover { filter: brightness(1.08); }
+  .btn--ghost { background: transparent; color: var(--text); border-color: var(--line); }
+  .btn--ghost:hover { border-color: var(--accent); }
+  .btn + .btn { margin-top: 10px; }
+
+  .success-mark {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: rgba(79, 209, 165, 0.15);
+    color: var(--good);
+    display: grid; place-items: center;
+    margin: 8px auto 18px;
+  }
+  .centered { text-align: center; align-items: center; }
+  .centered p { text-align: center; }
+
+  /* Progress / screen indicator */
+  .progress {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    border-top: 1px solid var(--line);
+    background: var(--panel-2);
+  }
+  .progress .dots { display: flex; gap: 8px; }
+  .progress .pdot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #3a4156;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: background .2s ease, transform .2s ease;
+  }
+  .progress .pdot.is-on { background: var(--accent); transform: scale(1.25); }
+  .progress .count {
+    margin-left: auto;
+    font-size: 13px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Restart control under the device */
+  .stage__foot {
+    margin-top: 18px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .linkbtn {
+    background: none;
+    border: none;
+    color: var(--accent);
+    font: inherit;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+  }
+
+  @media (max-width: 480px) {
+    .stage { padding-top: 16px; }
+    .device { border-radius: 20px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .screen { transition: none; }
+  }
+</style>
+</head>
+<body>
+  <main class="stage">
+    <!-- The clickable prototype device -->
+    <div class="device" role="group" aria-label="Interactive prototype">
+      <div class="device__bar" aria-hidden="true">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <!-- REPLACE: name of your prototype / app -->
+        <span class="title">Acme Prototype</span>
+      </div>
+
+      <div class="viewport">
+
+        <!-- ============ SCREEN 1: Welcome ============ -->
+        <section class="screen is-active centered" data-screen="welcome" aria-label="Welcome screen">
+          <span class="spacer"></span>
+          <div class="icon-hero" aria-hidden="true" style="margin-bottom:18px;color:var(--accent)">
+            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/>
+            </svg>
+          </div>
+          <!-- REPLACE: welcome headline + subtext -->
+          <h1>Welcome to Acme</h1>
+          <p>A quick, clickable walkthrough of how the experience feels. Tap below to begin.</p>
+          <span class="spacer"></span>
+          <!-- data-goto points at the data-screen you want to open next -->
+          <button class="btn btn--primary" data-goto="menu">Get started</button>
+          <button class="btn btn--ghost" data-goto="detail">Skip the tour</button>
+        </section>
+
+        <!-- ============ SCREEN 2: Menu / list of hotspots ============ -->
+        <section class="screen" data-screen="menu" aria-label="Menu screen">
+          <p class="eyebrow">Step 1</p>
+          <!-- REPLACE: menu heading -->
+          <h2>Choose an action</h2>
+          <p>Each row is a clickable hotspot that navigates to another screen.</p>
+
+          <!-- REPLACE: each .row is a hotspot. Edit label + set data-goto -->
+          <button class="row" data-goto="detail">
+            <span class="icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v16"/>
+              </svg>
+            </span>
+            <span class="meta"><strong>View details</strong><span>Open an example detail screen</span></span>
+            <span class="chev" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </span>
+          </button>
+
+          <button class="row" data-goto="done">
+            <span class="icon" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 6 9 17l-5-5"/>
+              </svg>
+            </span>
+            <span class="meta"><strong>Complete the flow</strong><span>Jump to the success screen</span></span>
+            <span class="chev" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </span>
+          </button>
+
+          <span class="spacer"></span>
+          <button class="btn btn--ghost" data-goto="welcome">Back</button>
+        </section>
+
+        <!-- ============ SCREEN 3: Detail ============ -->
+        <section class="screen" data-screen="detail" aria-label="Detail screen">
+          <p class="eyebrow">Step 2</p>
+          <!-- REPLACE: detail content -->
+          <h2>Item details</h2>
+          <p>This is a focused detail view. Swap in your own content, fields, or imagery here.</p>
+
+          <div class="card">
+            <strong>What ships in this template</strong>
+            <p style="margin:8px 0 0">Self-contained HTML, inline SVG icons, system fonts, and JS-driven screen switching with a live progress indicator.</p>
+          </div>
+          <div class="card">
+            <strong>Fully offline</strong>
+            <p style="margin:8px 0 0">No external assets, so it publishes in a single request and works without a network.</p>
+          </div>
+
+          <span class="spacer"></span>
+          <button class="btn btn--primary" data-goto="done">Confirm</button>
+          <button class="btn btn--ghost" data-goto="menu">Back to menu</button>
+        </section>
+
+        <!-- ============ SCREEN 4: Success / done ============ -->
+        <section class="screen centered" data-screen="done" aria-label="Success screen">
+          <span class="spacer"></span>
+          <div class="success-mark" aria-hidden="true">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+          </div>
+          <!-- REPLACE: success message -->
+          <h2>All done!</h2>
+          <p>That's the end of the flow. Restart to play through it again.</p>
+          <span class="spacer"></span>
+          <button class="btn btn--primary" data-goto="welcome">Start over</button>
+        </section>
+
+      </div><!-- /viewport -->
+
+      <!-- Screen indicator: dots are also clickable jumps -->
+      <nav class="progress" aria-label="Prototype progress">
+        <div class="dots" id="dots"></div>
+        <span class="count" id="count" aria-live="polite">Screen 1 of 4</span>
+      </nav>
+    </div><!-- /device -->
+
+    <p class="stage__foot">
+      Click the hotspots to move between screens ·
+      <button class="linkbtn" data-goto="welcome">restart</button>
+    </p>
+  </main>
+
+  <script>
+    (function () {
+      "use strict";
+      var screens = Array.prototype.slice.call(document.querySelectorAll(".screen"));
+      var order = screens.map(function (s) { return s.getAttribute("data-screen"); });
+      var dotsWrap = document.getElementById("dots");
+      var count = document.getElementById("count");
+
+      // Build the clickable progress dots from the screens that exist.
+      order.forEach(function (name, i) {
+        var b = document.createElement("button");
+        b.className = "pdot";
+        b.type = "button";
+        b.setAttribute("data-goto", name);
+        b.setAttribute("aria-label", "Go to screen " + (i + 1));
+        dotsWrap.appendChild(b);
+      });
+      var pdots = Array.prototype.slice.call(dotsWrap.children);
+
+      function show(name) {
+        var idx = order.indexOf(name);
+        if (idx === -1) { return; }
+        screens.forEach(function (s, i) {
+          s.classList.toggle("is-active", i === idx);
+        });
+        pdots.forEach(function (d, i) {
+          d.classList.toggle("is-on", i === idx);
+        });
+        count.textContent = "Screen " + (idx + 1) + " of " + order.length;
+        // Move focus to the new screen for keyboard/screen-reader users.
+        screens[idx].setAttribute("tabindex", "-1");
+        screens[idx].focus({ preventScroll: true });
+      }
+
+      // Any element with data-goto becomes a navigation trigger.
+      document.addEventListener("click", function (e) {
+        var trigger = e.target.closest("[data-goto]");
+        if (trigger) {
+          e.preventDefault();
+          show(trigger.getAttribute("data-goto"));
+        }
+      });
+
+      show(order[0]);
+    })();
+  </script>
+</body>
+</html>

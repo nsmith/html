@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<!--
+  TEMPLATE: Implementation Plan
+  USE: A single self-contained page for proposing how to build a feature or project.
+       Covers a phased timeline (gantt), a data-flow diagram, and a risk assessment table.
+  HOW TO USE: Edit the text marked with <!-- REPLACE: ... --> comments and obvious
+       placeholder copy below. Everything (CSS + JS + SVG) is inline, so you can publish
+       this one .html file as-is. No external resources, fonts, or images required.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- REPLACE: page title shown in the browser tab -->
+<title>Implementation Plan — Comment Threads on Task Cards</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #171a23;
+    --surface-2: #1e222e;
+    --border: #2a2f3d;
+    --text: #e7e9ee;
+    --muted: #9aa3b2;
+    --accent: #6ea8fe;
+    --accent-soft: #1d2740;
+    --green: #4ade80;
+    --amber: #fbbf24;
+    --red: #f87171;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --radius: 12px;
+    --maxw: 880px;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f6f7f9;
+      --surface: #ffffff;
+      --surface-2: #f0f2f5;
+      --border: #e2e5ea;
+      --text: #1a1d24;
+      --muted: #5b6472;
+      --accent: #2563eb;
+      --accent-soft: #e4ecff;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    font-size: 16px;
+  }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 2.5rem 1.25rem 5rem; }
+  a { color: var(--accent); }
+
+  /* Header */
+  header { margin-bottom: 2.5rem; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 0.5rem;
+  }
+  h1 {
+    font-size: clamp(1.75rem, 5vw, 2.6rem);
+    line-height: 1.15;
+    margin: 0 0 0.75rem;
+    letter-spacing: -0.02em;
+  }
+  .lede { color: var(--muted); max-width: 60ch; margin: 0 0 1.5rem; }
+
+  .meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .meta div { background: var(--surface); padding: 0.85rem 1rem; }
+  .meta dt {
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 0.25rem;
+  }
+  .meta dd { margin: 0; font-weight: 600; font-family: var(--mono); font-size: 0.9rem; }
+
+  /* Sections */
+  section { margin-top: 3rem; }
+  .sec-head { display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 1.25rem; }
+  .sec-num {
+    font-family: var(--mono);
+    color: var(--accent);
+    font-size: 0.95rem;
+    font-weight: 700;
+  }
+  h2 { font-size: 1.3rem; margin: 0; letter-spacing: -0.01em; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+  }
+
+  /* Gantt / Timeline */
+  .gantt { display: flex; flex-direction: column; gap: 0.6rem; }
+  .gantt-scale {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    gap: 0.75rem;
+    align-items: center;
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+  .gantt-weeks { display: grid; grid-template-columns: repeat(6, 1fr); }
+  .gantt-weeks span { text-align: center; font-family: var(--mono); }
+  .gantt-row {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    gap: 0.75rem;
+    align-items: center;
+  }
+  .gantt-label { font-size: 0.85rem; font-weight: 600; }
+  .gantt-track {
+    position: relative;
+    height: 30px;
+    background: var(--surface-2);
+    border-radius: 7px;
+    overflow: hidden;
+  }
+  .gantt-bar {
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    border-radius: 5px;
+    background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 65%, #fff));
+    display: flex;
+    align-items: center;
+    padding: 0 0.5rem;
+    font-size: 0.7rem;
+    color: #fff;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .gantt-bar.alt { background: linear-gradient(90deg, #7c5cff, #a78bfa); }
+  .gantt-bar.alt2 { background: linear-gradient(90deg, #14b8a6, #5eead4); }
+  .milestones { list-style: none; padding: 0; margin: 1.25rem 0 0; display: grid; gap: 0.75rem; }
+  .milestones li {
+    display: flex;
+    gap: 0.75rem;
+    font-size: 0.9rem;
+  }
+  .milestones .dot {
+    flex: 0 0 auto;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin-top: 0.5rem;
+  }
+  .milestones b { display: block; }
+  .milestones span { color: var(--muted); }
+
+  /* Data flow diagram */
+  .diagram { width: 100%; height: auto; display: block; }
+  .diagram text { font-family: var(--sans); fill: var(--text); }
+  .diagram .node { fill: var(--surface-2); stroke: var(--border); stroke-width: 1.5; }
+  .diagram .node-accent { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+  .diagram .flow { stroke: var(--accent); stroke-width: 2; fill: none; }
+  .diagram .flow-dashed { stroke: var(--muted); stroke-width: 1.5; fill: none; stroke-dasharray: 5 4; }
+  .diagram .lbl { font-size: 13px; font-weight: 600; }
+  .diagram .sub { font-size: 11px; fill: var(--muted); }
+  .legend { display: flex; gap: 1.25rem; flex-wrap: wrap; margin-top: 0.85rem; font-size: 0.8rem; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 0.4rem; }
+  .legend i { width: 22px; height: 0; border-top: 2px solid var(--accent); display: inline-block; }
+  .legend i.dash { border-top: 2px dashed var(--muted); }
+
+  /* Risk table */
+  .table-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; min-width: 520px; }
+  th, td { text-align: left; padding: 0.8rem 1rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th {
+    background: var(--surface-2);
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 700;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  .sev {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    letter-spacing: 0.03em;
+  }
+  .sev.high { background: color-mix(in srgb, var(--red) 18%, transparent); color: var(--red); }
+  .sev.med  { background: color-mix(in srgb, var(--amber) 18%, transparent); color: var(--amber); }
+  .sev.low  { background: color-mix(in srgb, var(--green) 18%, transparent); color: var(--green); }
+
+  /* Open questions */
+  .questions { display: grid; gap: 0.85rem; }
+  .questions .card p { margin: 0 0 0.4rem; }
+  .questions .tag { font-size: 0.75rem; color: var(--muted); font-family: var(--mono); }
+
+  code { font-family: var(--mono); font-size: 0.85em; background: var(--surface-2); padding: 0.1rem 0.35rem; border-radius: 5px; }
+  footer { margin-top: 4rem; padding-top: 1.5rem; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.8rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ============ HEADER ============ -->
+  <header>
+    <p class="eyebrow">Implementation Plan</p>
+    <!-- REPLACE: the feature or project name -->
+    <h1>Comment Threads on Task Cards</h1>
+    <!-- REPLACE: one or two sentence summary of what you're building and why -->
+    <p class="lede">Let teammates discuss work in context by attaching lightweight,
+      realtime comment threads directly to each task card.</p>
+
+    <!-- REPLACE: high-level metadata about the work -->
+    <dl class="meta">
+      <div><dt>Estimate</dt><dd>~3 weeks</dd></div>
+      <div><dt>Owner</dt><dd>@yourname</dd></div>
+      <div><dt>New tables</dt><dd>2</dd></div>
+      <div><dt>Feature flag</dt><dd>comments_v1</dd></div>
+    </dl>
+  </header>
+
+  <!-- ============ 01 TIMELINE / GANTT ============ -->
+  <section id="timeline">
+    <div class="sec-head"><span class="sec-num">01</span><h2>Timeline</h2></div>
+    <div class="card">
+      <div class="gantt">
+        <!-- REPLACE: column headers for your time units (weeks, sprints, etc.) -->
+        <div class="gantt-scale">
+          <div></div>
+          <div class="gantt-weeks"><span>W1</span><span>W2</span><span>W3</span><span>W4</span><span>W5</span><span>W6</span></div>
+        </div>
+        <!-- REPLACE each row: label + a bar positioned with left/width as % across the track -->
+        <div class="gantt-row">
+          <div class="gantt-label">Data model &amp; API</div>
+          <div class="gantt-track"><div class="gantt-bar" style="left:0%;width:33%">Schema + endpoints</div></div>
+        </div>
+        <div class="gantt-row">
+          <div class="gantt-label">Realtime fan-out</div>
+          <div class="gantt-track"><div class="gantt-bar alt" style="left:25%;width:33%">Subscriptions</div></div>
+        </div>
+        <div class="gantt-row">
+          <div class="gantt-label">Card UI</div>
+          <div class="gantt-track"><div class="gantt-bar alt2" style="left:42%;width:42%">Thread component</div></div>
+        </div>
+        <div class="gantt-row">
+          <div class="gantt-label">Polish &amp; rollout</div>
+          <div class="gantt-track"><div class="gantt-bar" style="left:75%;width:25%">QA + flag</div></div>
+        </div>
+      </div>
+
+      <!-- REPLACE: key milestones / deliverables -->
+      <ul class="milestones">
+        <li><span class="dot"></span><div><b>End of W2 — API complete</b><span>CRUD endpoints, migrations merged behind the flag.</span></div></li>
+        <li><span class="dot"></span><div><b>End of W4 — UI feature-complete</b><span>Threads render, post, and update in realtime.</span></div></li>
+        <li><span class="dot"></span><div><b>End of W6 — Staged rollout</b><span>10% &rarr; 100% with monitoring dashboards live.</span></div></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ 02 DATA-FLOW DIAGRAM ============ -->
+  <section id="dataflow">
+    <div class="sec-head"><span class="sec-num">02</span><h2>Data Flow</h2></div>
+    <div class="card">
+      <!-- REPLACE: node labels and arrows to match your architecture. All inline SVG, no images. -->
+      <svg class="diagram" viewBox="0 0 760 260" role="img" aria-labelledby="df-title df-desc">
+        <title id="df-title">Comment data flow diagram</title>
+        <desc id="df-desc">Client posts a comment to the API, which writes to the database and fans out realtime updates to other clients.</desc>
+
+        <!-- Client A -->
+        <rect class="node-accent" x="20" y="100" width="150" height="60" rx="10"/>
+        <text class="lbl" x="95" y="126" text-anchor="middle">Client (author)</text>
+        <text class="sub" x="95" y="144" text-anchor="middle">optimistic write</text>
+
+        <!-- API -->
+        <rect class="node" x="305" y="100" width="150" height="60" rx="10"/>
+        <text class="lbl" x="380" y="126" text-anchor="middle">API service</text>
+        <text class="sub" x="380" y="144" text-anchor="middle">validate + persist</text>
+
+        <!-- DB -->
+        <rect class="node" x="590" y="20" width="150" height="60" rx="10"/>
+        <text class="lbl" x="665" y="46" text-anchor="middle">Database</text>
+        <text class="sub" x="665" y="64" text-anchor="middle">comments table</text>
+
+        <!-- Other clients -->
+        <rect class="node-accent" x="590" y="180" width="150" height="60" rx="10"/>
+        <text class="lbl" x="665" y="206" text-anchor="middle">Other clients</text>
+        <text class="sub" x="665" y="224" text-anchor="middle">live update</text>
+
+        <!-- arrows -->
+        <defs>
+          <marker id="arr" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+            <path d="M0,0 L7,3 L0,6 Z" fill="var(--accent)"/>
+          </marker>
+          <marker id="arrm" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+            <path d="M0,0 L7,3 L0,6 Z" fill="var(--muted)"/>
+          </marker>
+        </defs>
+        <path class="flow" d="M170,130 L300,130" marker-end="url(#arr)"/>
+        <path class="flow" d="M455,120 C520,90 540,70 585,55" marker-end="url(#arr)"/>
+        <path class="flow-dashed" d="M455,140 C520,170 540,190 585,205" marker-end="url(#arrm)"/>
+      </svg>
+      <div class="legend">
+        <span><i></i> Request / write path</span>
+        <span><i class="dash"></i> Realtime fan-out (subscriptions)</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 03 RISK ASSESSMENT ============ -->
+  <section id="risks">
+    <div class="sec-head"><span class="sec-num">03</span><h2>Risks &amp; Mitigations</h2></div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th scope="col">Risk</th><th scope="col">Severity</th><th scope="col">Mitigation</th></tr>
+        </thead>
+        <!-- REPLACE: your real risks. Use sev high / med / low for the badge. -->
+        <tbody>
+          <tr>
+            <td>Realtime fan-out overwhelms the socket layer on large boards</td>
+            <td><span class="sev high">High</span></td>
+            <td>Batch updates per board and cap subscriptions; load-test at 2&times; peak.</td>
+          </tr>
+          <tr>
+            <td>Optimistic writes diverge from server state on conflict</td>
+            <td><span class="sev med">Medium</span></td>
+            <td>Reconcile on ack; show a retry affordance if the write is rejected.</td>
+          </tr>
+          <tr>
+            <td>Comment spam / abuse with no moderation</td>
+            <td><span class="sev med">Medium</span></td>
+            <td>Rate-limit per user and ship soft-delete before public launch.</td>
+          </tr>
+          <tr>
+            <td>Migration adds notable index build time</td>
+            <td><span class="sev low">Low</span></td>
+            <td>Create indexes concurrently; run during the low-traffic window.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ 04 OPEN QUESTIONS ============ -->
+  <section id="questions">
+    <div class="sec-head"><span class="sec-num">04</span><h2>Open Questions</h2></div>
+    <!-- REPLACE: decisions still to be made, who decides, and by when -->
+    <div class="questions">
+      <div class="card">
+        <p>Do we support editing comments in v1, or delete-only?</p>
+        <span class="tag">decides: product &middot; by: end of W1</span>
+      </div>
+      <div class="card">
+        <p>Should @mentions trigger notifications now or in a fast-follow?</p>
+        <span class="tag">decides: eng + product &middot; by: end of W2</span>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <!-- REPLACE: status line / last-updated -->
+    <p>Draft v1 &middot; Last updated 2026 &middot; Feedback welcome.</p>
+  </footer>
+
+</div>
+</body>
+</html>

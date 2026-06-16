@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<!--
+  TEMPLATE: Arrow-Key Slide Deck
+  A single, self-contained HTML presentation. No build tools, no external files.
+
+  HOW TO USE:
+  1. Edit the <title> below and the deck title on the first slide.
+  2. Replace the placeholder text inside each <section class="slide">.
+  3. To add/remove slides, copy or delete a <section class="slide"> block.
+     Slide types provided: title, bullets, content, and closing.
+  4. Navigate with Left/Right arrow keys, the on-screen Prev/Next buttons,
+     spacebar (next), or Home/End (first/last). Click anywhere on the right
+     or left half of a slide to advance/go back.
+  5. Publish the whole file as-is to ht-ml.app. Works fully offline.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- REPLACE: page title shown in the browser tab -->
+<title>My Presentation</title>
+<style>
+  :root {
+    --bg: #0f1226;
+    --bg-2: #1a1f3d;
+    --surface: rgba(255, 255, 255, 0.04);
+    --border: rgba(255, 255, 255, 0.12);
+    --text: #f4f5fb;
+    --muted: #a9aecb;
+    --accent: #7c8cff;
+    --accent-2: #4ad6c2;
+    --shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+    --radius: 18px;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+            Arial, "Helvetica Neue", sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+            "Liberation Mono", monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    margin: 0;
+  }
+
+  body {
+    font-family: var(--font);
+    color: var(--text);
+    background:
+      radial-gradient(1200px 800px at 15% -10%, var(--bg-2), transparent 60%),
+      radial-gradient(900px 700px at 110% 120%, #2a1e44, transparent 55%),
+      var(--bg);
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    overflow: hidden;
+  }
+
+  /* ---- Stage holds all slides ---- */
+  .stage {
+    position: relative;
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(16px, 4vw, 56px);
+  }
+
+  .slide {
+    position: absolute;
+    inset: clamp(16px, 4vw, 56px);
+    margin: auto;
+    max-width: 1000px;
+    max-height: 640px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(6px);
+    padding: clamp(28px, 5vw, 64px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 18px;
+    opacity: 0;
+    transform: translateY(14px) scale(0.99);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    pointer-events: none;
+    overflow-y: auto;
+  }
+
+  .slide.is-active {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .slide { transition: opacity 0.15s linear; transform: none; }
+  }
+
+  /* ---- Slide content styles ---- */
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent-2);
+    margin: 0;
+  }
+
+  .slide h1 {
+    font-size: clamp(2.2rem, 6vw, 4rem);
+    line-height: 1.05;
+    margin: 0;
+    letter-spacing: -0.02em;
+    background: linear-gradient(120deg, var(--text), var(--accent));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .slide h2 {
+    font-size: clamp(1.6rem, 4vw, 2.6rem);
+    line-height: 1.1;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  .slide p { font-size: clamp(1rem, 2.2vw, 1.3rem); line-height: 1.6; margin: 0; color: var(--muted); }
+  .slide p.lead { color: var(--text); }
+
+  .slide ul {
+    margin: 6px 0 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .slide li {
+    position: relative;
+    padding-left: 36px;
+    font-size: clamp(1rem, 2.4vw, 1.35rem);
+    line-height: 1.5;
+  }
+
+  .slide li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.55em;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  }
+
+  .byline {
+    margin-top: 8px;
+    font-family: var(--mono);
+    font-size: 0.95rem;
+    color: var(--muted);
+  }
+
+  /* Two-column "stat" layout used on the content slide */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    margin-top: 8px;
+  }
+  .stat {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    background: rgba(255, 255, 255, 0.03);
+  }
+  .stat .num {
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .stat .label { color: var(--muted); font-size: 0.95rem; margin-top: 4px; }
+
+  .closing { text-align: center; align-items: center; }
+  .closing .mark { width: 64px; height: 64px; color: var(--accent); }
+
+  /* ---- Bottom control bar ---- */
+  .controls {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    padding: 16px clamp(16px, 4vw, 40px) 24px;
+  }
+
+  .nav-btn {
+    appearance: none;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 0.95rem;
+    cursor: pointer;
+    border-radius: 999px;
+    padding: 10px 18px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.1s ease;
+  }
+  .nav-btn:hover:not(:disabled) { background: rgba(124, 140, 255, 0.18); border-color: var(--accent); }
+  .nav-btn:active:not(:disabled) { transform: translateY(1px); }
+  .nav-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .nav-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .nav-btn svg { width: 16px; height: 16px; }
+
+  .counter {
+    font-family: var(--mono);
+    font-size: 0.95rem;
+    color: var(--muted);
+    min-width: 64px;
+    text-align: center;
+  }
+  .counter b { color: var(--text); }
+
+  /* Progress bar across the very top */
+  .progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    width: 0;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    transition: width 0.4s ease;
+    z-index: 5;
+  }
+
+  .hint {
+    position: fixed;
+    bottom: 10px;
+    right: 14px;
+    font-size: 0.78rem;
+    color: var(--muted);
+    opacity: 0.7;
+  }
+</style>
+</head>
+<body>
+  <div class="progress" id="progress" aria-hidden="true"></div>
+
+  <main class="stage" aria-roledescription="carousel" aria-label="Slide presentation">
+
+    <!-- ============================================================ -->
+    <!-- SLIDE 1 — TITLE                                               -->
+    <!-- ============================================================ -->
+    <section class="slide" role="group" aria-roledescription="slide" aria-label="Title">
+      <!-- REPLACE: small label above the title (e.g. event, date, team) -->
+      <p class="eyebrow">Quarterly Review &middot; 2026</p>
+      <!-- REPLACE: the main presentation title -->
+      <h1>Your Big Idea, Presented Beautifully</h1>
+      <!-- REPLACE: one-line subtitle / tagline -->
+      <p class="lead">A clean, build-free slide deck you can edit, publish, and present from any browser.</p>
+      <!-- REPLACE: presenter name and role -->
+      <p class="byline">Jane Doe &middot; Product Lead</p>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SLIDE 2 — BULLETS (agenda)                                    -->
+    <!-- ============================================================ -->
+    <section class="slide" role="group" aria-roledescription="slide" aria-label="Agenda">
+      <p class="eyebrow">Agenda</p>
+      <h2>What we&rsquo;ll cover</h2>
+      <!-- REPLACE: each <li> is one bullet. Add or remove freely. -->
+      <ul>
+        <li>The problem worth solving</li>
+        <li>Our approach in three steps</li>
+        <li>Results so far</li>
+        <li>What we need from you</li>
+      </ul>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SLIDE 3 — BULLETS (detail)                                    -->
+    <!-- ============================================================ -->
+    <section class="slide" role="group" aria-roledescription="slide" aria-label="Approach">
+      <p class="eyebrow">The Approach</p>
+      <h2>Three steps to get there</h2>
+      <ul>
+        <!-- REPLACE: replace these with your own points -->
+        <li><strong>Understand</strong> &mdash; talk to real users and map the pain.</li>
+        <li><strong>Build</strong> &mdash; ship the smallest thing that proves value.</li>
+        <li><strong>Measure</strong> &mdash; let the numbers decide what comes next.</li>
+      </ul>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SLIDE 4 — CONTENT (stats / metrics)                          -->
+    <!-- ============================================================ -->
+    <section class="slide" role="group" aria-roledescription="slide" aria-label="Results">
+      <p class="eyebrow">Results</p>
+      <h2>The numbers so far</h2>
+      <!-- REPLACE: each .stat is one metric. Add or remove as needed. -->
+      <div class="stats">
+        <div class="stat"><div class="num">+38%</div><div class="label">Weekly active users</div></div>
+        <div class="stat"><div class="num">120ms</div><div class="label">Median latency</div></div>
+        <div class="stat"><div class="num">4.8/5</div><div class="label">Satisfaction score</div></div>
+        <div class="stat"><div class="num">0.2%</div><div class="label">Error rate</div></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SLIDE 5 — CONTENT (call to action)                           -->
+    <!-- ============================================================ -->
+    <section class="slide" role="group" aria-roledescription="slide" aria-label="The ask">
+      <p class="eyebrow">The Ask</p>
+      <h2>What we need from you</h2>
+      <!-- REPLACE: your single, clear ask -->
+      <p class="lead">Approve the next phase so we can ship to all customers by the end of the quarter.</p>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SLIDE 6 — CLOSING                                            -->
+    <!-- ============================================================ -->
+    <section class="slide closing" role="group" aria-roledescription="slide" aria-label="Thank you">
+      <svg class="mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 2l2.6 6.3L21 9l-5 4.3L17.6 20 12 16.5 6.4 20 8 13.3 3 9l6.4-.7z"/>
+      </svg>
+      <!-- REPLACE: closing line -->
+      <h2>Thank you</h2>
+      <!-- REPLACE: contact / link line -->
+      <p>Questions? &middot; jane@example.com</p>
+    </section>
+
+  </main>
+
+  <nav class="controls" aria-label="Slide navigation">
+    <button class="nav-btn" id="prev" type="button" aria-label="Previous slide">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+      Prev
+    </button>
+    <span class="counter" id="counter" aria-live="polite"><b>1</b> / 6</span>
+    <button class="nav-btn" id="next" type="button" aria-label="Next slide">
+      Next
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+  </nav>
+
+  <p class="hint" aria-hidden="true">Use &larr; &rarr; arrow keys</p>
+
+<script>
+(function () {
+  "use strict";
+
+  var slides = Array.prototype.slice.call(document.querySelectorAll(".slide"));
+  var prevBtn = document.getElementById("prev");
+  var nextBtn = document.getElementById("next");
+  var counter = document.getElementById("counter");
+  var progress = document.getElementById("progress");
+  var total = slides.length;
+  var index = 0;
+
+  function render() {
+    slides.forEach(function (slide, i) {
+      var active = i === index;
+      slide.classList.toggle("is-active", active);
+      slide.setAttribute("aria-hidden", active ? "false" : "true");
+    });
+    counter.innerHTML = "<b>" + (index + 1) + "</b> / " + total;
+    progress.style.width = (total <= 1 ? 100 : (index / (total - 1)) * 100) + "%";
+    prevBtn.disabled = index === 0;
+    nextBtn.disabled = index === total - 1;
+  }
+
+  function go(to) {
+    index = Math.max(0, Math.min(total - 1, to));
+    render();
+  }
+
+  prevBtn.addEventListener("click", function () { go(index - 1); });
+  nextBtn.addEventListener("click", function () { go(index + 1); });
+
+  document.addEventListener("keydown", function (e) {
+    switch (e.key) {
+      case "ArrowRight":
+      case "PageDown":
+      case " ":
+        e.preventDefault(); go(index + 1); break;
+      case "ArrowLeft":
+      case "PageUp":
+        e.preventDefault(); go(index - 1); break;
+      case "Home":
+        e.preventDefault(); go(0); break;
+      case "End":
+        e.preventDefault(); go(total - 1); break;
+    }
+  });
+
+  // Click left/right half of the stage to navigate.
+  document.querySelector(".stage").addEventListener("click", function (e) {
+    if (e.target.closest("a, button")) return;
+    var mid = window.innerWidth / 2;
+    go(e.clientX < mid ? index - 1 : index + 1);
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

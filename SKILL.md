@@ -31,6 +31,48 @@ public. To keep a page private, set a password (see [Password protection](#passw
 
 HTML is content-scanned on create and update; unsafe content is rejected (422).
 
+## Don't have HTML yet? Offer a template
+
+If the user wants to publish something but doesn't already have an HTML document,
+offer a ready-made template instead of building from scratch. There are 20
+self-contained templates in `assets/templates/` covering common use cases (slide
+decks, status reports, code reviews, design systems, diagrams, clickable
+prototypes, and more). Each inlines all CSS/JS/SVG, so it publishes in a single
+request with no asset step.
+
+Workflow:
+1. Match the user's intent to a template using the table below (or the fuller
+   catalog in `assets/templates/README.md`). If nothing fits, just hand-write the
+   HTML.
+2. Read the chosen template file and replace its `<!-- REPLACE: ... -->`
+   placeholders with the user's real content.
+3. Publish the filled-in HTML via Step 1 below.
+
+| Template | Use it when the user wants to… |
+| :------- | :----------------------------- |
+| `slide-deck.html` | …make a presentation / deck (arrow-key navigable). |
+| `status-report.html` | …share a weekly status / shipping update with metrics. |
+| `incident-report.html` | …write a post-mortem / incident timeline. |
+| `implementation-plan.html` | …propose a project plan (timeline, data flow, risks). |
+| `annotated-pr.html` | …publish a code review with inline diff notes. |
+| `pr-writeup.html` | …summarize a PR for reviewers (motivation, before/after). |
+| `module-map.html` | …diagram a codebase's modules and dependencies. |
+| `code-approaches.html` | …compare three implementation options with trade-offs. |
+| `visual-designs.html` | …compare design directions / palettes side by side. |
+| `design-system.html` | …document a design system (colors, type, spacing tokens). |
+| `component-variants.html` | …show a component's sizes, states, and intents. |
+| `animation-sandbox.html` | …prototype a CSS transition with live controls. |
+| `clickable-flow.html` | …build a clickable multi-screen prototype. |
+| `flowchart.html` | …publish an interactive pipeline / process diagram. |
+| `svg-figure-sheet.html` | …publish editable inline-SVG figures for a post/docs. |
+| `feature-explainer.html` | …document a feature (overview, collapsibles, FAQ). |
+| `concept-explainer.html` | …teach a concept with an interactive diagram + table. |
+| `triage-board.html` | …make a drag-and-drop triage/kanban board. |
+| `feature-flags.html` | …build a feature-flag toggle editor with diff export. |
+| `prompt-tuner.html` | …author/live-test a prompt with `{{variable}}` slots. |
+
+If the user already has their own HTML, skip this and go straight to Step 1.
+
 ## Step 1 — Create the site
 
 POST the HTML document. `password` is optional (omit it for a public site).

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<!--
+  TEMPLATE: Weekly Status
+  PURPOSE:  A self-contained weekly shipping/status report. Scannable highlights,
+            key metrics with inline charts, and Shipped / In Progress / Blocked sections.
+  HOW TO USE:
+    1. Edit the text inside the <!-- REPLACE: ... --> comments and placeholder copy below.
+    2. Update the inline bar chart values in the data-* attributes (see the velocity chart).
+    3. Save and publish the single file to ht-ml.app. No external files are needed.
+  NOTE: Everything is inline (CSS + JS + SVG). No external fonts, images, scripts, or CDNs.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- REPLACE: Page title shown in the browser tab and link previews -->
+<title>Weekly Status — Platform Team</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --panel-2: #1d212b;
+    --border: #272c38;
+    --text: #e7eaf0;
+    --muted: #9aa3b2;
+    --faint: #6b7384;
+    --accent: #6ea8fe;
+    --green: #4ade80;
+    --amber: #fbbf24;
+    --red: #f87171;
+    --radius: 14px;
+    --maxw: 880px;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+            "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f5f6f8;
+      --panel: #ffffff;
+      --panel-2: #f0f2f6;
+      --border: #e2e5ec;
+      --text: #1a1d24;
+      --muted: #5b626f;
+      --faint: #8a909c;
+      --accent: #2563eb;
+      --green: #16a34a;
+      --amber: #d97706;
+      --red: #dc2626;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    line-height: 1.55;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 40px 20px 72px; }
+
+  /* Header */
+  header { margin-bottom: 32px; }
+  .eyebrow {
+    display: inline-block;
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--accent); font-weight: 650; margin-bottom: 10px;
+  }
+  h1 { font-size: clamp(26px, 5vw, 38px); line-height: 1.12; margin: 0 0 8px; letter-spacing: -.02em; }
+  .meta { color: var(--muted); font-size: 15px; }
+  .meta strong { color: var(--text); font-weight: 600; }
+
+  /* Section scaffolding */
+  section { margin-top: 40px; }
+  .section-head {
+    display: flex; align-items: baseline; gap: 12px;
+    border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 20px;
+  }
+  h2 { font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); margin: 0; font-weight: 700; }
+  .section-note { color: var(--faint); font-size: 13px; margin-left: auto; }
+
+  /* Metrics */
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .metric {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 16px 14px;
+  }
+  .metric .label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .metric .value { font-size: 28px; font-weight: 700; letter-spacing: -.02em; line-height: 1; }
+  .metric .delta { font-size: 12px; margin-top: 8px; display: flex; align-items: center; gap: 4px; }
+  .delta.up { color: var(--green); }
+  .delta.down { color: var(--red); }
+  .delta.flat { color: var(--faint); }
+  /* tiny inline sparkline rendered with CSS bars */
+  .spark { display: flex; align-items: flex-end; gap: 3px; height: 22px; margin-top: 10px; }
+  .spark span { flex: 1; background: var(--accent); opacity: .55; border-radius: 2px 2px 0 0; min-height: 2px; }
+  .spark span:last-child { opacity: 1; }
+
+  /* Highlights */
+  .highlights { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .highlights li {
+    background: var(--panel); border: 1px solid var(--border); border-left: 3px solid var(--accent);
+    border-radius: 10px; padding: 12px 14px; color: var(--text); font-size: 15px;
+  }
+  .highlights li strong { font-weight: 650; }
+
+  /* Velocity bar chart */
+  .chart { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 18px 14px; }
+  .bars { display: flex; align-items: flex-end; gap: 10px; height: 160px; }
+  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; height: 100%; justify-content: flex-end; }
+  .bar {
+    width: 100%; max-width: 46px; background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 55%, transparent));
+    border-radius: 6px 6px 0 0; min-height: 4px; position: relative;
+    transition: height .6s cubic-bezier(.2,.7,.2,1);
+  }
+  .bar-val { position: absolute; top: -20px; left: 0; right: 0; text-align: center; font-size: 12px; font-weight: 600; color: var(--text); }
+  .bar-lbl { font-size: 12px; color: var(--faint); }
+
+  /* Workstream columns */
+  .streams { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .stream { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 14px 16px; }
+  .stream h3 { font-size: 13px; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; font-weight: 650; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .dot.green { background: var(--green); } .dot.amber { background: var(--amber); } .dot.red { background: var(--red); }
+  .item { padding: 9px 0; border-top: 1px solid var(--border); font-size: 14px; }
+  .item:first-of-type { border-top: 0; }
+  .item .t { font-weight: 550; }
+  .item .s { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .tag { display: inline-block; font-size: 11px; color: var(--faint); background: var(--panel-2); border: 1px solid var(--border); border-radius: 6px; padding: 1px 7px; margin-top: 6px; }
+
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--border); color: var(--faint); font-size: 13px; }
+
+  @media (max-width: 760px) {
+    .metrics { grid-template-columns: repeat(2, 1fr); }
+    .streams { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 420px) {
+    .metrics { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<main class="wrap">
+
+  <!-- ============ HEADER ============ -->
+  <header>
+    <!-- REPLACE: short label for the team or product -->
+    <span class="eyebrow">Platform Team · Weekly</span>
+    <!-- REPLACE: report headline -->
+    <h1>Shipping Update</h1>
+    <!-- REPLACE: date range and any context line -->
+    <p class="meta"><strong>Jun 9 – Jun 15, 2026</strong> · Prepared for the eng review · Sprint 24</p>
+  </header>
+
+  <!-- ============ KEY METRICS ============ -->
+  <section aria-labelledby="metrics-h">
+    <div class="section-head"><h2 id="metrics-h">Key Metrics</h2><span class="section-note">vs. previous week</span></div>
+    <!-- REPLACE each metric: label, value, delta direction (up/down/flat) and text. Spark bars are decorative trend hints. -->
+    <div class="metrics">
+      <div class="metric">
+        <div class="label">PRs merged</div>
+        <div class="value">42</div>
+        <div class="delta up">▲ +18% on last week</div>
+        <div class="spark" aria-hidden="true"><span style="height:40%"></span><span style="height:55%"></span><span style="height:35%"></span><span style="height:70%"></span><span style="height:60%"></span><span style="height:85%"></span><span style="height:100%"></span></div>
+      </div>
+      <div class="metric">
+        <div class="label">Deploys</div>
+        <div class="value">11</div>
+        <div class="delta up">▲ +2 deploys</div>
+        <div class="spark" aria-hidden="true"><span style="height:50%"></span><span style="height:30%"></span><span style="height:60%"></span><span style="height:45%"></span><span style="height:75%"></span><span style="height:65%"></span><span style="height:90%"></span></div>
+      </div>
+      <div class="metric">
+        <div class="label">Incidents</div>
+        <div class="value">1</div>
+        <div class="delta down">▼ -2 (resolved)</div>
+        <div class="spark" aria-hidden="true"><span style="height:80%"></span><span style="height:60%"></span><span style="height:90%"></span><span style="height:40%"></span><span style="height:50%"></span><span style="height:30%"></span><span style="height:20%"></span></div>
+      </div>
+      <div class="metric">
+        <div class="label">P95 latency</div>
+        <div class="value">214<span style="font-size:15px;color:var(--muted)">ms</span></div>
+        <div class="delta flat">— flat week-over-week</div>
+        <div class="spark" aria-hidden="true"><span style="height:60%"></span><span style="height:62%"></span><span style="height:58%"></span><span style="height:64%"></span><span style="height:61%"></span><span style="height:59%"></span><span style="height:60%"></span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ HIGHLIGHTS ============ -->
+  <section aria-labelledby="hl-h">
+    <div class="section-head"><h2 id="hl-h">Highlights</h2></div>
+    <!-- REPLACE: 2–4 one-line wins. Lead with the outcome, keep each scannable. -->
+    <ul class="highlights">
+      <li><strong>Search rollout complete.</strong> New ranking is live for 100% of users; click-through up 9%.</li>
+      <li><strong>Onboarding rewrite shipped.</strong> Median time-to-first-action dropped from 4m12s to 2m48s.</li>
+      <li><strong>Pipeline hardening.</strong> Flaky test rate down to 0.4%, unblocking the daily deploy cadence.</li>
+    </ul>
+  </section>
+
+  <!-- ============ VELOCITY CHART ============ -->
+  <section aria-labelledby="vel-h">
+    <div class="section-head"><h2 id="vel-h">Velocity</h2><span class="section-note">PRs merged per day</span></div>
+    <!-- REPLACE: set each bar's data-value (the daily count) and the label below it.
+         The chart auto-scales to the largest value — no other math needed. -->
+    <div class="chart">
+      <div class="bars" id="bars" role="img" aria-label="Bar chart of pull requests merged per day this week">
+        <div class="bar-col"><div class="bar" data-value="4"></div><div class="bar-lbl">Mon</div></div>
+        <div class="bar-col"><div class="bar" data-value="7"></div><div class="bar-lbl">Tue</div></div>
+        <div class="bar-col"><div class="bar" data-value="5"></div><div class="bar-lbl">Wed</div></div>
+        <div class="bar-col"><div class="bar" data-value="9"></div><div class="bar-lbl">Thu</div></div>
+        <div class="bar-col"><div class="bar" data-value="11"></div><div class="bar-lbl">Fri</div></div>
+        <div class="bar-col"><div class="bar" data-value="3"></div><div class="bar-lbl">Sat</div></div>
+        <div class="bar-col"><div class="bar" data-value="3"></div><div class="bar-lbl">Sun</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ WORKSTREAMS: Shipped / In Progress / Blocked ============ -->
+  <section aria-labelledby="work-h">
+    <div class="section-head"><h2 id="work-h">Workstreams</h2></div>
+    <div class="streams">
+
+      <!-- SHIPPED -->
+      <div class="stream">
+        <h3><span class="dot green"></span>Shipped</h3>
+        <!-- REPLACE: completed items this week -->
+        <div class="item"><div class="t">Search ranking v2</div><div class="s">Live for all users</div><div class="tag">#PR-2210</div></div>
+        <div class="item"><div class="t">Onboarding flow rewrite</div><div class="s">Released Tue</div><div class="tag">#PR-2188</div></div>
+        <div class="item"><div class="t">Billing webhook retries</div><div class="s">Deployed, monitored</div><div class="tag">#PR-2231</div></div>
+      </div>
+
+      <!-- IN PROGRESS -->
+      <div class="stream">
+        <h3><span class="dot amber"></span>In Progress</h3>
+        <!-- REPLACE: active work and a quick status / ETA -->
+        <div class="item"><div class="t">Notification preferences</div><div class="s">In review · ~70%</div><div class="tag">ETA Wed</div></div>
+        <div class="item"><div class="t">Mobile dashboard</div><div class="s">Building charts</div><div class="tag">ETA next wk</div></div>
+        <div class="item"><div class="t">API rate-limit tiers</div><div class="s">Spec approved, coding</div><div class="tag">ETA next wk</div></div>
+      </div>
+
+      <!-- BLOCKED -->
+      <div class="stream">
+        <h3><span class="dot red"></span>Blocked</h3>
+        <!-- REPLACE: blockers + who/what is needed to unblock -->
+        <div class="item"><div class="t">SSO for Enterprise</div><div class="s">Waiting on vendor SAML config</div><div class="tag">Needs: Vendor</div></div>
+        <div class="item"><div class="t">Data export job</div><div class="s">Pending infra capacity</div><div class="tag">Needs: Infra</div></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ FOOTER ============ -->
+  <footer>
+    <!-- REPLACE: source, owner, and generation note -->
+    <p>Sources: GitHub, deploy logs, observability dashboard · Compiled by the Platform Team · Updated Jun 15, 2026.</p>
+  </footer>
+
+</main>
+
+<script>
+  // Auto-scale the velocity bars to the tallest value and add the count label.
+  // Edit the data-value attributes in the HTML above — this needs no changes.
+  (function () {
+    var bars = Array.prototype.slice.call(document.querySelectorAll('#bars .bar'));
+    if (!bars.length) return;
+    var max = bars.reduce(function (m, b) {
+      return Math.max(m, parseFloat(b.getAttribute('data-value')) || 0);
+    }, 0) || 1;
+    bars.forEach(function (b) {
+      var v = parseFloat(b.getAttribute('data-value')) || 0;
+      var pct = Math.max(4, Math.round((v / max) * 100));
+      var label = document.createElement('span');
+      label.className = 'bar-val';
+      label.textContent = v;
+      b.appendChild(label);
+      // animate up on load
+      requestAnimationFrame(function () { b.style.height = pct + '%'; });
+    });
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<!--
+  Template: Ticket Triage Board
+  Use: A single self-contained page for triaging tickets into priority columns.
+       Drag cards between columns, filter by tag, then "Copy as Markdown" to paste
+       the current board state into a planning doc. Publish as one HTML file to ht-ml.app.
+  Customize: search for "REPLACE:" comments below to swap in your board title,
+       column names, and cards. Everything is inline — no external files needed.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- REPLACE: page title shown in the browser tab -->
+<title>Ticket Triage Board</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --surface: #171a21;
+    --surface-2: #1e222b;
+    --border: #2a2f3a;
+    --text: #e7e9ee;
+    --muted: #9aa1ad;
+    --accent: #6ea8fe;
+    --accent-soft: rgba(110, 168, 254, 0.16);
+    --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.28);
+    --radius: 12px;
+    --col-now: #f0708a;
+    --col-next: #f4b860;
+    --col-later: #6ea8fe;
+    --col-cut: #8a93a3;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: radial-gradient(1200px 600px at 70% -10%, #1a1f2b 0%, var(--bg) 60%);
+    color: var(--text);
+    line-height: 1.5;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 28px 20px 64px; }
+
+  header.page { margin-bottom: 22px; }
+  .eyebrow {
+    font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--muted); font-weight: 600; margin: 0 0 6px;
+  }
+  h1 { font-size: 26px; line-height: 1.2; margin: 0 0 6px; font-weight: 700; }
+  .subtitle { color: var(--muted); margin: 0; font-size: 14.5px; }
+
+  .toolbar {
+    display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+    justify-content: space-between; margin: 20px 0 18px;
+  }
+  .filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .filters .label { font-size: 12.5px; color: var(--muted); margin-right: 2px; }
+  .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  button {
+    font: inherit; cursor: pointer; border-radius: 9px;
+    border: 1px solid var(--border); background: var(--surface-2); color: var(--text);
+    padding: 8px 14px; font-size: 13.5px; font-weight: 600;
+    display: inline-flex; align-items: center; gap: 7px;
+    transition: background .15s ease, border-color .15s ease, transform .05s ease;
+  }
+  button:hover { background: #262b36; border-color: #3a4150; }
+  button:active { transform: translateY(1px); }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #08131f; }
+  button.primary:hover { background: #84b6ff; }
+  button svg { width: 16px; height: 16px; }
+
+  .tag {
+    border: 1px solid var(--border); background: var(--surface);
+    color: var(--muted); padding: 5px 11px; border-radius: 999px;
+    font-size: 12.5px; font-weight: 600; cursor: pointer;
+    transition: all .15s ease;
+  }
+  .tag:hover { color: var(--text); border-color: #3a4150; }
+  .tag[aria-pressed="true"] {
+    background: var(--accent-soft); color: var(--accent); border-color: var(--accent);
+  }
+  .tag:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .board {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    align-items: start;
+  }
+  .column {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    min-height: 140px;
+    transition: background .15s ease, border-color .15s ease;
+  }
+  .column.drag-over { background: var(--surface-2); border-color: var(--accent); }
+  .col-head {
+    display: flex; align-items: center; gap: 8px;
+    padding: 4px 4px 12px; border-bottom: 1px solid var(--border); margin-bottom: 10px;
+  }
+  .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .col-title { font-weight: 700; font-size: 14px; }
+  .col-count {
+    margin-left: auto; font-size: 12px; color: var(--muted);
+    background: var(--surface-2); border-radius: 999px; padding: 2px 9px; font-weight: 600;
+  }
+
+  .cards { display: flex; flex-direction: column; gap: 10px; min-height: 40px; }
+
+  .card {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 12px;
+    cursor: grab;
+    box-shadow: var(--shadow);
+    transition: border-color .15s ease, transform .08s ease, opacity .15s ease;
+  }
+  .card:hover { border-color: #3a4150; }
+  .card:active { cursor: grabbing; }
+  .card.dragging { opacity: 0.45; border-style: dashed; }
+  .card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .card-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .card-id { font-size: 11.5px; color: var(--muted); font-weight: 700; letter-spacing: 0.02em; }
+  .card-title { font-size: 13.5px; font-weight: 600; line-height: 1.4; }
+  .card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+  .card-tag {
+    font-size: 11px; font-weight: 600; color: var(--muted);
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; padding: 2px 7px;
+  }
+  .card.is-hidden { display: none; }
+
+  .empty-hint {
+    color: var(--muted); font-size: 12.5px; text-align: center;
+    padding: 14px 6px; border: 1px dashed var(--border); border-radius: 8px;
+  }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+    background: var(--surface-2); color: var(--text); border: 1px solid var(--accent);
+    padding: 11px 18px; border-radius: 10px; font-size: 13.5px; font-weight: 600;
+    box-shadow: var(--shadow); opacity: 0; pointer-events: none;
+    transition: opacity .2s ease, transform .2s ease; z-index: 50;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .hint { color: var(--muted); font-size: 12.5px; margin-top: 18px; }
+  kbd {
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: 5px;
+    padding: 1px 6px; font-size: 11.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  @media (max-width: 920px) {
+    .board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 560px) {
+    .board { grid-template-columns: 1fr; }
+    .toolbar { flex-direction: column; align-items: stretch; }
+    h1 { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="page">
+    <!-- REPLACE: eyebrow / project context -->
+    <p class="eyebrow">Cycle Planning</p>
+    <!-- REPLACE: board heading -->
+    <h1>Ticket Triage Board</h1>
+    <!-- REPLACE: short description of what this board is for -->
+    <p class="subtitle">Drag tickets between columns to set priority, filter by tag, then copy the result as Markdown.</p>
+  </header>
+
+  <div class="toolbar">
+    <div class="filters" id="filters" role="group" aria-label="Filter by tag">
+      <span class="label">Filter:</span>
+      <!-- Tag buttons are generated from card data on load -->
+    </div>
+    <div class="actions">
+      <button id="resetBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+        Reset
+      </button>
+      <button id="copyBtn" type="button" class="primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copy as Markdown
+      </button>
+    </div>
+  </div>
+
+  <main class="board" id="board">
+    <!--
+      REPLACE: Each <section class="column"> is a priority lane.
+      Change data-title to rename a column. Add/remove .card elements freely.
+      A card needs: data-id, the .card-title text, and zero or more .card-tag spans.
+    -->
+    <section class="column" data-column="now" data-title="Now" aria-label="Now column">
+      <div class="col-head">
+        <span class="dot" style="background:var(--col-now)"></span>
+        <span class="col-title">Now</span>
+        <span class="col-count">0</span>
+      </div>
+      <div class="cards" data-dropzone>
+        <article class="card" draggable="true" data-id="ACME-101" tabindex="0">
+          <div class="card-top"><span class="card-id">ACME-101</span></div>
+          <div class="card-title">Fix crash when saving an empty draft</div>
+          <div class="card-tags"><span class="card-tag">bug</span><span class="card-tag">editor</span></div>
+        </article>
+        <article class="card" draggable="true" data-id="ACME-102" tabindex="0">
+          <div class="card-top"><span class="card-id">ACME-102</span></div>
+          <div class="card-title">Login session expires too aggressively</div>
+          <div class="card-tags"><span class="card-tag">bug</span><span class="card-tag">auth</span></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="column" data-column="next" data-title="Next" aria-label="Next column">
+      <div class="col-head">
+        <span class="dot" style="background:var(--col-next)"></span>
+        <span class="col-title">Next</span>
+        <span class="col-count">0</span>
+      </div>
+      <div class="cards" data-dropzone>
+        <article class="card" draggable="true" data-id="ACME-110" tabindex="0">
+          <div class="card-top"><span class="card-id">ACME-110</span></div>
+          <div class="card-title">Add keyboard shortcuts to the editor</div>
+          <div class="card-tags"><span class="card-tag">feature</span><span class="card-tag">editor</span></div>
+        </article>
+        <article class="card" draggable="true" data-id="ACME-111" tabindex="0">
+          <div class="card-top"><span class="card-id">ACME-111</span></div>
+          <div class="card-title">Surface inline error messages on the upload form</div>
+          <div class="card-tags"><span class="card-tag">ux</span></div>
+        </article>
+        <article class="card" draggable="true" data-id="ACME-112" tabindex="0">
+          <div class="card-top"><span class="card-id">ACME-112</span></div>
+          <div class="card-title">Cache dashboard queries for faster loads</div>
+          <div class="card-tags"><span class="card-tag">perf</span></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="column" data-column="later" data-title="Later" aria-label="Later column">
+      <div class="col-head">
+        <span class="dot" style="background:var(--col-later)"></span>
+        <span class="col-title">Later</span>
+        <span class="col-count">0</span>
+      </div>
+      <div class="cards" data-dropzone>
+        <article class="card" draggable="true" data-id="ACME-120" tabindex="0">
+          <div class="card-top"><span class="card-id">ACME-120</span></div>
+          <div class="card-title">Dark mode for the public site</div>
+          <div class="card-tags"><span class="card-tag">feature</span><span class="card-tag">ux</span></div>
+        </article>
+        <article class="card" draggable="true" data-id="ACME-121" tabindex="0">
+          <div class="card-top"><span class="card-id">ACME-121</span></div>
+          <div class="card-title">Export reports to CSV</div>
+          <div class="card-tags"><span class="card-tag">feature</span></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="column" data-column="cut" data-title="Cut" aria-label="Cut column">
+      <div class="col-head">
+        <span class="dot" style="background:var(--col-cut)"></span>
+        <span class="col-title">Cut</span>
+        <span class="col-count">0</span>
+      </div>
+      <div class="cards" data-dropzone>
+        <article class="card" draggable="true" data-id="ACME-130" tabindex="0">
+          <div class="card-top"><span class="card-id">ACME-130</span></div>
+          <div class="card-title">Redesign the legacy settings page</div>
+          <div class="card-tags"><span class="card-tag">ux</span></div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <p class="hint">Tip: drag a card to another column, or focus a card and press <kbd>Enter</kbd> to move it to the next column. Tap a tag to filter.</p>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var board = document.getElementById("board");
+  var columns = Array.prototype.slice.call(board.querySelectorAll(".column"));
+  var snapshot = board.innerHTML; // for Reset
+  var activeTag = null;
+
+  /* ---------- Drag and drop ---------- */
+  var dragged = null;
+
+  board.addEventListener("dragstart", function (e) {
+    var card = e.target.closest(".card");
+    if (!card) return;
+    dragged = card;
+    card.classList.add("dragging");
+    e.dataTransfer.effectAllowed = "move";
+    try { e.dataTransfer.setData("text/plain", card.dataset.id || ""); } catch (err) {}
+  });
+
+  board.addEventListener("dragend", function () {
+    if (dragged) dragged.classList.remove("dragging");
+    dragged = null;
+    columns.forEach(function (c) { c.classList.remove("drag-over"); });
+    updateCounts();
+  });
+
+  function getAfterElement(zone, y) {
+    var cards = Array.prototype.slice.call(zone.querySelectorAll(".card:not(.dragging)"));
+    var closest = { offset: -Infinity, el: null };
+    cards.forEach(function (c) {
+      var box = c.getBoundingClientRect();
+      var offset = y - box.top - box.height / 2;
+      if (offset < 0 && offset > closest.offset) closest = { offset: offset, el: c };
+    });
+    return closest.el;
+  }
+
+  columns.forEach(function (col) {
+    var zone = col.querySelector("[data-dropzone]");
+
+    col.addEventListener("dragover", function (e) {
+      if (!dragged) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      col.classList.add("drag-over");
+      var after = getAfterElement(zone, e.clientY);
+      if (after == null) zone.appendChild(dragged);
+      else zone.insertBefore(dragged, after);
+    });
+
+    col.addEventListener("dragleave", function (e) {
+      if (!col.contains(e.relatedTarget)) col.classList.remove("drag-over");
+    });
+
+    col.addEventListener("drop", function (e) {
+      e.preventDefault();
+      col.classList.remove("drag-over");
+      updateCounts();
+    });
+  });
+
+  /* ---------- Keyboard move (accessibility) ---------- */
+  board.addEventListener("keydown", function (e) {
+    if (e.key !== "Enter") return;
+    var card = e.target.closest(".card");
+    if (!card) return;
+    var col = card.closest(".column");
+    var idx = columns.indexOf(col);
+    var next = columns[(idx + 1) % columns.length];
+    next.querySelector("[data-dropzone]").appendChild(card);
+    card.focus();
+    updateCounts();
+    applyFilter();
+  });
+
+  /* ---------- Counts ---------- */
+  function updateCounts() {
+    columns.forEach(function (col) {
+      var n = col.querySelectorAll(".card").length;
+      col.querySelector(".col-count").textContent = n;
+    });
+  }
+
+  /* ---------- Tag filtering ---------- */
+  function collectTags() {
+    var set = {};
+    board.querySelectorAll(".card-tag").forEach(function (t) {
+      set[t.textContent.trim()] = true;
+    });
+    return Object.keys(set).sort();
+  }
+
+  function buildFilters() {
+    var host = document.getElementById("filters");
+    host.querySelectorAll(".tag").forEach(function (n) { n.remove(); });
+    collectTags().forEach(function (tag) {
+      var b = document.createElement("button");
+      b.className = "tag";
+      b.type = "button";
+      b.textContent = tag;
+      b.setAttribute("aria-pressed", "false");
+      b.addEventListener("click", function () {
+        activeTag = (activeTag === tag) ? null : tag;
+        host.querySelectorAll(".tag").forEach(function (n) {
+          n.setAttribute("aria-pressed", String(n.textContent === activeTag));
+        });
+        applyFilter();
+      });
+      host.appendChild(b);
+    });
+  }
+
+  function applyFilter() {
+    board.querySelectorAll(".card").forEach(function (card) {
+      if (!activeTag) { card.classList.remove("is-hidden"); return; }
+      var tags = Array.prototype.map.call(card.querySelectorAll(".card-tag"), function (t) {
+        return t.textContent.trim();
+      });
+      card.classList.toggle("is-hidden", tags.indexOf(activeTag) === -1);
+    });
+  }
+
+  /* ---------- Copy as Markdown ---------- */
+  function toMarkdown() {
+    var title = (document.querySelector("h1") || {}).textContent || "Triage Board";
+    var lines = ["# " + title.trim(), ""];
+    columns.forEach(function (col) {
+      var name = col.dataset.title || "Column";
+      lines.push("## " + name);
+      var cards = col.querySelectorAll(".card");
+      if (!cards.length) { lines.push("_(empty)_", ""); return; }
+      cards.forEach(function (card) {
+        var id = (card.dataset.id || "").trim();
+        var t = (card.querySelector(".card-title") || {}).textContent || "";
+        var tags = Array.prototype.map.call(card.querySelectorAll(".card-tag"), function (n) {
+          return "`" + n.textContent.trim() + "`";
+        });
+        var row = "- ";
+        if (id) row += "**" + id + "** ";
+        row += t.trim();
+        if (tags.length) row += " — " + tags.join(" ");
+        lines.push(row);
+      });
+      lines.push("");
+    });
+    return lines.join("\n").trim() + "\n";
+  }
+
+  document.getElementById("copyBtn").addEventListener("click", function () {
+    var md = toMarkdown();
+    var done = function () { showToast("Copied board as Markdown"); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(md).then(done, function () { fallbackCopy(md, done); });
+    } else {
+      fallbackCopy(md, done);
+    }
+  });
+
+  function fallbackCopy(text, cb) {
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); cb(); }
+    catch (err) { showToast("Copy failed — select and copy manually"); }
+    document.body.removeChild(ta);
+  }
+
+  /* ---------- Reset ---------- */
+  document.getElementById("resetBtn").addEventListener("click", function () {
+    board.innerHTML = snapshot;
+    columns = Array.prototype.slice.call(board.querySelectorAll(".column"));
+    activeTag = null;
+    init();
+    showToast("Board reset");
+  });
+
+  /* ---------- Toast ---------- */
+  var toast = document.getElementById("toast");
+  var toastTimer = null;
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toast.classList.remove("show"); }, 2200);
+  }
+
+  /* ---------- Init ---------- */
+  function init() {
+    columns = Array.prototype.slice.call(board.querySelectorAll(".column"));
+    buildFilters();
+    applyFilter();
+    updateCounts();
+  }
+  init();
+})();
+</script>
+</body>
+</html>

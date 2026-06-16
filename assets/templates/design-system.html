@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<!--
+  TEMPLATE: Living Design System
+  A single-file, self-contained design-system reference page: color swatches,
+  type scale, spacing tokens, radius/elevation, and core component samples.
+
+  HOW TO USE:
+    1. Replace the sample brand name, tagline, and source paths in the header.
+    2. Edit the design tokens in the :root block of <style> to match your brand.
+       The swatches/scale below read those CSS variables automatically where noted,
+       but the human-readable labels/hex codes in the markup are also editable —
+       search for <!-- REPLACE: ... --> markers.
+    3. Publish the single .html file to ht-ml.app. No external assets required.
+
+  Click any color hex or token name to copy it to the clipboard.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Living Design System</title>
+<style>
+  /* ============================================================
+     DESIGN TOKENS — edit these to rebrand the whole page.
+     REPLACE: tune the values below to match your product.
+     ============================================================ */
+  :root {
+    /* Brand / primary palette */
+    --color-clay:    #c0563b;
+    --color-slate:   #3a4a5c;
+    --color-sand:    #e8ddc9;
+    --color-moss:    #5a7159;
+
+    /* Neutrals */
+    --gray-0:  #ffffff;
+    --gray-1:  #f4f5f7;
+    --gray-2:  #e2e5ea;
+    --gray-3:  #b4bbc6;
+    --gray-4:  #6b7585;
+    --gray-5:  #2b313b;
+
+    /* Semantic */
+    --success: #2f8f5b;
+    --warning: #d08700;
+    --danger:  #c8453c;
+    --info:    #2f6fd0;
+
+    /* Spacing scale */
+    --sp-1: 4px;
+    --sp-2: 8px;
+    --sp-3: 12px;
+    --sp-4: 16px;
+    --sp-5: 24px;
+    --sp-6: 32px;
+    --sp-7: 48px;
+    --sp-8: 64px;
+
+    /* Radii */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 14px;
+    --radius-pill: 999px;
+
+    /* Elevation */
+    --shadow-sm: 0 1px 2px rgba(20, 24, 31, 0.08);
+    --shadow-md: 0 4px 12px rgba(20, 24, 31, 0.10);
+    --shadow-lg: 0 16px 40px rgba(20, 24, 31, 0.16);
+
+    /* Page surface */
+    --bg:      var(--gray-1);
+    --surface: var(--gray-0);
+    --ink:     var(--gray-5);
+    --ink-soft: var(--gray-4);
+    --line:    var(--gray-2);
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:      #14181f;
+      --surface: #1c222b;
+      --ink:     #eef1f5;
+      --ink-soft: #9aa4b2;
+      --line:    #2c333e;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+      --shadow-md: 0 4px 12px rgba(0,0,0,0.45);
+      --shadow-lg: 0 16px 40px rgba(0,0,0,0.55);
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: var(--sp-7) var(--sp-5) var(--sp-8);
+  }
+
+  /* ---------- Header ---------- */
+  header.page {
+    margin-bottom: var(--sp-8);
+  }
+  .eyebrow {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-clay);
+    margin: 0 0 var(--sp-2);
+  }
+  h1 {
+    font-size: clamp(32px, 6vw, 52px);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin: 0 0 var(--sp-3);
+    font-weight: 700;
+  }
+  .lede {
+    font-size: 18px;
+    color: var(--ink-soft);
+    max-width: 60ch;
+    margin: 0 0 var(--sp-4);
+  }
+  .source {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  .source code {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 2px 7px;
+  }
+
+  /* ---------- Sections ---------- */
+  section { margin-bottom: var(--sp-8); }
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    gap: var(--sp-3);
+    border-bottom: 1px solid var(--line);
+    padding-bottom: var(--sp-3);
+    margin-bottom: var(--sp-5);
+  }
+  .section-head h2 {
+    font-size: 22px;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+  .section-head .num {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--color-clay);
+    font-weight: 600;
+  }
+  .section-head p {
+    margin: 0;
+    margin-left: auto;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  .subhead {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin: var(--sp-5) 0 var(--sp-3);
+  }
+
+  /* ---------- Color swatches ---------- */
+  .swatches {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: var(--sp-4);
+  }
+  .swatch {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+  .swatch .chip {
+    height: 76px;
+    border-bottom: 1px solid var(--line);
+  }
+  .swatch .meta { padding: var(--sp-3); }
+  .swatch .name { font-weight: 600; font-size: 14px; }
+  .swatch .vals {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: var(--sp-1);
+  }
+  .copyable {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-soft);
+    background: none;
+    border: none;
+    padding: 0;
+    text-align: left;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: color 0.15s;
+  }
+  .copyable:hover { color: var(--color-clay); }
+  .copyable:focus-visible {
+    outline: 2px solid var(--color-clay);
+    outline-offset: 2px;
+  }
+  .copyable.copied { color: var(--success); }
+
+  /* ---------- Type scale ---------- */
+  .type-row {
+    display: flex;
+    align-items: baseline;
+    gap: var(--sp-5);
+    padding: var(--sp-4) 0;
+    border-bottom: 1px solid var(--line);
+    flex-wrap: wrap;
+  }
+  .type-row:last-child { border-bottom: none; }
+  .type-sample { flex: 1 1 300px; min-width: 0; }
+  .type-spec {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+
+  /* ---------- Spacing tokens ---------- */
+  .spacing-list { display: flex; flex-direction: column; gap: var(--sp-3); }
+  .spacing-row {
+    display: grid;
+    grid-template-columns: 90px 60px 1fr;
+    align-items: center;
+    gap: var(--sp-4);
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+  .spacing-row .label { color: var(--ink); font-weight: 600; }
+  .spacing-row .px { color: var(--ink-soft); }
+  .spacing-bar {
+    height: 16px;
+    background: var(--color-clay);
+    border-radius: var(--radius-sm);
+  }
+
+  /* ---------- Radius & elevation ---------- */
+  .token-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: var(--sp-4);
+  }
+  .token-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: var(--sp-4);
+    text-align: center;
+  }
+  .radius-demo {
+    height: 72px;
+    background: var(--color-slate);
+    margin-bottom: var(--sp-3);
+  }
+  .elev-demo {
+    height: 72px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    margin-bottom: var(--sp-3);
+    border-radius: var(--radius-sm);
+  }
+  .token-card .name { font-weight: 600; font-size: 14px; }
+  .token-card .val {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-top: 2px;
+  }
+
+  /* ---------- Components ---------- */
+  .components {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: var(--sp-5);
+  }
+  .component-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: var(--sp-5);
+    box-shadow: var(--shadow-sm);
+  }
+  .component-card h3 {
+    margin: 0 0 var(--sp-4);
+    font-size: 14px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .row { display: flex; flex-wrap: wrap; gap: var(--sp-3); align-items: center; }
+
+  .btn {
+    font: inherit;
+    font-weight: 600;
+    font-size: 14px;
+    border-radius: var(--radius-md);
+    padding: var(--sp-2) var(--sp-4);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: filter 0.15s, background 0.15s;
+  }
+  .btn:focus-visible { outline: 2px solid var(--color-clay); outline-offset: 2px; }
+  .btn-primary { background: var(--color-clay); color: #fff; }
+  .btn-primary:hover { filter: brightness(1.07); }
+  .btn-secondary {
+    background: transparent;
+    color: var(--ink);
+    border-color: var(--line);
+  }
+  .btn-secondary:hover { background: var(--gray-1); }
+
+  .field {
+    width: 100%;
+    font: inherit;
+    font-size: 14px;
+    padding: var(--sp-2) var(--sp-3);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: var(--bg);
+    color: var(--ink);
+  }
+  .field:focus { outline: none; border-color: var(--color-clay); box-shadow: 0 0 0 3px rgba(192,86,59,0.18); }
+  label.check { display: flex; align-items: center; gap: var(--sp-2); font-size: 14px; cursor: pointer; }
+  label.check input { width: 16px; height: 16px; accent-color: var(--color-clay); }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: var(--radius-pill);
+  }
+  .badge-success { background: rgba(47,143,91,0.15);  color: var(--success); }
+  .badge-warning { background: rgba(208,135,0,0.16);  color: var(--warning); }
+  .badge-danger  { background: rgba(200,69,60,0.15);  color: var(--danger); }
+  .badge-info    { background: rgba(47,111,208,0.14); color: var(--info); }
+  .badge svg { width: 12px; height: 12px; }
+
+  footer.page {
+    margin-top: var(--sp-8);
+    padding-top: var(--sp-5);
+    border-top: 1px solid var(--line);
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+
+  /* Copy toast */
+  #toast {
+    position: fixed;
+    bottom: var(--sp-5);
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--gray-5);
+    color: var(--gray-0);
+    padding: var(--sp-2) var(--sp-4);
+    border-radius: var(--radius-pill);
+    font-size: 13px;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s, transform 0.2s;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ============================ HEADER ============================ -->
+  <header class="page">
+    <!-- REPLACE: brand name, tagline, and token source paths -->
+    <p class="eyebrow">Living Design System</p>
+    <h1>Acme Design System</h1>
+    <p class="lede">A single source of truth for the colors, type, spacing, and components that build the Acme product. Click any value to copy it.</p>
+    <p class="source">Tokens defined in <code>src/styles/tokens.css</code> &middot; components in <code>src/components/</code></p>
+  </header>
+
+  <!-- ============================ COLORS ============================ -->
+  <section aria-labelledby="colors">
+    <div class="section-head">
+      <span class="num">01</span>
+      <h2 id="colors">Color</h2>
+      <p>Click a hex or variable to copy</p>
+    </div>
+
+    <p class="subhead">Brand</p>
+    <!-- REPLACE: brand swatches — keep chip color in sync with the hex/var shown -->
+    <div class="swatches">
+      <div class="swatch">
+        <div class="chip" style="background:var(--color-clay)"></div>
+        <div class="meta"><div class="name">Clay</div><div class="vals">
+          <button class="copyable" data-copy="#c0563b">#c0563b</button>
+          <button class="copyable" data-copy="--color-clay">--color-clay</button>
+        </div></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:var(--color-slate)"></div>
+        <div class="meta"><div class="name">Slate</div><div class="vals">
+          <button class="copyable" data-copy="#3a4a5c">#3a4a5c</button>
+          <button class="copyable" data-copy="--color-slate">--color-slate</button>
+        </div></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:var(--color-sand)"></div>
+        <div class="meta"><div class="name">Sand</div><div class="vals">
+          <button class="copyable" data-copy="#e8ddc9">#e8ddc9</button>
+          <button class="copyable" data-copy="--color-sand">--color-sand</button>
+        </div></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:var(--color-moss)"></div>
+        <div class="meta"><div class="name">Moss</div><div class="vals">
+          <button class="copyable" data-copy="#5a7159">#5a7159</button>
+          <button class="copyable" data-copy="--color-moss">--color-moss</button>
+        </div></div>
+      </div>
+    </div>
+
+    <p class="subhead">Neutral</p>
+    <div class="swatches">
+      <div class="swatch">
+        <div class="chip" style="background:var(--gray-0)"></div>
+        <div class="meta"><div class="name">Gray 0</div><div class="vals">
+          <button class="copyable" data-copy="#ffffff">#ffffff</button>
+          <button class="copyable" data-copy="--gray-0">--gray-0</button>
+        </div></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:var(--gray-2)"></div>
+        <div class="meta"><div class="name">Gray 2</div><div class="vals">
+          <button class="copyable" data-copy="#e2e5ea">#e2e5ea</button>
+          <button class="copyable" data-copy="--gray-2">--gray-2</button>
+        </div></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:var(--gray-3)"></div>
+        <div class="meta"><div class="name">Gray 3</div><div class="vals">
+          <button class="copyable" data-copy="#b4bbc6">#b4bbc6</button>
+          <button class="copyable" data-copy="--gray-3">--gray-3</button>
+        </div></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:var(--gray-4)"></div>
+        <div class="meta"><div class="name">Gray 4</div><div class="vals">
+          <button class="copyable" data-copy="#6b7585">#6b7585</button>
+          <button class="copyable" data-copy="--gray-4">--gray-4</button>
+        </div></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:var(--gray-5)"></div>
+        <div class="meta"><div class="name">Gray 5</div><div class="vals">
+          <button class="copyable" data-copy="#2b313b">#2b313b</button>
+          <button class="copyable" data-copy="--gray-5">--gray-5</button>
+        </div></div>
+      </div>
+    </div>
+
+    <p class="subhead">Semantic</p>
+    <div class="swatches">
+      <div class="swatch">
+        <div class="chip" style="background:var(--success)"></div>
+        <div class="meta"><div class="name">Success</div><div class="vals">
+          <button class="copyable" data-copy="#2f8f5b">#2f8f5b</button>
+          <button class="copyable" data-copy="--success">--success</button>
+        </div></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:var(--warning)"></div>
+        <div class="meta"><div class="name">Warning</div><div class="vals">
+          <button class="copyable" data-copy="#d08700">#d08700</button>
+          <button class="copyable" data-copy="--warning">--warning</button>
+        </div></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:var(--danger)"></div>
+        <div class="meta"><div class="name">Danger</div><div class="vals">
+          <button class="copyable" data-copy="#c8453c">#c8453c</button>
+          <button class="copyable" data-copy="--danger">--danger</button>
+        </div></div>
+      </div>
+      <div class="swatch">
+        <div class="chip" style="background:var(--info)"></div>
+        <div class="meta"><div class="name">Info</div><div class="vals">
+          <button class="copyable" data-copy="#2f6fd0">#2f6fd0</button>
+          <button class="copyable" data-copy="--info">--info</button>
+        </div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ TYPOGRAPHY ============================ -->
+  <section aria-labelledby="type">
+    <div class="section-head">
+      <span class="num">02</span>
+      <h2 id="type">Typography</h2>
+      <p>System font stack</p>
+    </div>
+    <!-- REPLACE: type scale samples to match your tokens (size / line-height / weight) -->
+    <div class="type-row">
+      <div class="type-sample" style="font-size:48px;line-height:1.05;font-weight:700;letter-spacing:-0.02em;">Display</div>
+      <div class="type-spec">48px / 1.05 / 700</div>
+    </div>
+    <div class="type-row">
+      <div class="type-sample" style="font-size:32px;line-height:1.15;font-weight:700;letter-spacing:-0.01em;">Heading 1</div>
+      <div class="type-spec">32px / 1.15 / 700</div>
+    </div>
+    <div class="type-row">
+      <div class="type-sample" style="font-size:24px;line-height:1.25;font-weight:600;">Heading 2</div>
+      <div class="type-spec">24px / 1.25 / 600</div>
+    </div>
+    <div class="type-row">
+      <div class="type-sample" style="font-size:16px;line-height:1.5;font-weight:400;">Body — the quick brown fox jumps over the lazy dog.</div>
+      <div class="type-spec">16px / 1.5 / 400</div>
+    </div>
+    <div class="type-row">
+      <div class="type-sample" style="font-size:14px;line-height:1.5;font-weight:400;color:var(--ink-soft);">Small — supporting copy and helper text.</div>
+      <div class="type-spec">14px / 1.5 / 400</div>
+    </div>
+    <div class="type-row">
+      <div class="type-sample" style="font-size:12px;line-height:1.4;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-soft);">Caption / Label</div>
+      <div class="type-spec">12px / 1.4 / 600</div>
+    </div>
+  </section>
+
+  <!-- ============================ SPACING ============================ -->
+  <section aria-labelledby="spacing">
+    <div class="section-head">
+      <span class="num">03</span>
+      <h2 id="spacing">Spacing</h2>
+      <p>Base unit: 4px</p>
+    </div>
+    <!-- REPLACE: spacing scale — bar width should equal the px value -->
+    <div class="spacing-list">
+      <div class="spacing-row"><span class="label">--sp-1</span><span class="px">4px</span><div class="spacing-bar" style="width:4px"></div></div>
+      <div class="spacing-row"><span class="label">--sp-2</span><span class="px">8px</span><div class="spacing-bar" style="width:8px"></div></div>
+      <div class="spacing-row"><span class="label">--sp-3</span><span class="px">12px</span><div class="spacing-bar" style="width:12px"></div></div>
+      <div class="spacing-row"><span class="label">--sp-4</span><span class="px">16px</span><div class="spacing-bar" style="width:16px"></div></div>
+      <div class="spacing-row"><span class="label">--sp-5</span><span class="px">24px</span><div class="spacing-bar" style="width:24px"></div></div>
+      <div class="spacing-row"><span class="label">--sp-6</span><span class="px">32px</span><div class="spacing-bar" style="width:32px"></div></div>
+      <div class="spacing-row"><span class="label">--sp-7</span><span class="px">48px</span><div class="spacing-bar" style="width:48px"></div></div>
+      <div class="spacing-row"><span class="label">--sp-8</span><span class="px">64px</span><div class="spacing-bar" style="width:64px"></div></div>
+    </div>
+  </section>
+
+  <!-- ============================ RADIUS & ELEVATION ============================ -->
+  <section aria-labelledby="radius">
+    <div class="section-head">
+      <span class="num">04</span>
+      <h2 id="radius">Radius &amp; Elevation</h2>
+    </div>
+    <p class="subhead">Border radius</p>
+    <!-- REPLACE: radius tokens -->
+    <div class="token-grid">
+      <div class="token-card"><div class="radius-demo" style="border-radius:var(--radius-sm)"></div><div class="name">Small</div><div class="val">4px</div></div>
+      <div class="token-card"><div class="radius-demo" style="border-radius:var(--radius-md)"></div><div class="name">Medium</div><div class="val">8px</div></div>
+      <div class="token-card"><div class="radius-demo" style="border-radius:var(--radius-lg)"></div><div class="name">Large</div><div class="val">14px</div></div>
+      <div class="token-card"><div class="radius-demo" style="border-radius:var(--radius-pill)"></div><div class="name">Pill</div><div class="val">999px</div></div>
+    </div>
+    <p class="subhead">Elevation</p>
+    <!-- REPLACE: shadow tokens -->
+    <div class="token-grid">
+      <div class="token-card"><div class="elev-demo" style="box-shadow:var(--shadow-sm)"></div><div class="name">Shadow SM</div><div class="val">subtle lift</div></div>
+      <div class="token-card"><div class="elev-demo" style="box-shadow:var(--shadow-md)"></div><div class="name">Shadow MD</div><div class="val">cards</div></div>
+      <div class="token-card"><div class="elev-demo" style="box-shadow:var(--shadow-lg)"></div><div class="name">Shadow LG</div><div class="val">modals</div></div>
+    </div>
+  </section>
+
+  <!-- ============================ COMPONENTS ============================ -->
+  <section aria-labelledby="components">
+    <div class="section-head">
+      <span class="num">05</span>
+      <h2 id="components">Core Components</h2>
+      <p>Built from the tokens above</p>
+    </div>
+    <!-- REPLACE: swap in your own component samples -->
+    <div class="components">
+      <div class="component-card">
+        <h3>Buttons</h3>
+        <div class="row">
+          <button class="btn btn-primary">Primary</button>
+          <button class="btn btn-secondary">Secondary</button>
+        </div>
+      </div>
+
+      <div class="component-card">
+        <h3>Input</h3>
+        <label class="check" for="demo-input" style="margin-bottom:var(--sp-2)">Email address</label>
+        <input class="field" id="demo-input" type="email" placeholder="you@example.com">
+      </div>
+
+      <div class="component-card">
+        <h3>Checkbox</h3>
+        <div class="row" style="flex-direction:column;align-items:flex-start;gap:var(--sp-3)">
+          <label class="check"><input type="checkbox" checked> Subscribe to updates</label>
+          <label class="check"><input type="checkbox"> Remember this device</label>
+        </div>
+      </div>
+
+      <div class="component-card">
+        <h3>Badges</h3>
+        <div class="row">
+          <span class="badge badge-success">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8.5l3.5 3.5L13 4.5"/></svg>
+            Active
+          </span>
+          <span class="badge badge-warning">Pending</span>
+          <span class="badge badge-danger">Failed</span>
+          <span class="badge badge-info">Beta</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="page">
+    <!-- REPLACE: footer note / last-updated -->
+    <p>Acme Design System &middot; Last updated June 2026 &middot; Published on ht-ml.app</p>
+  </footer>
+
+</div>
+
+<div id="toast" role="status" aria-live="polite">Copied</div>
+
+<script>
+  // Click-to-copy for any element with [data-copy]. Falls back gracefully.
+  (function () {
+    var toast = document.getElementById('toast');
+    var toastTimer;
+
+    function showToast(text) {
+      toast.textContent = text;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () { toast.classList.remove('show'); }, 1400);
+    }
+
+    function copy(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        return navigator.clipboard.writeText(text);
+      }
+      // Fallback for non-secure contexts
+      return new Promise(function (resolve) {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(ta);
+        resolve();
+      });
+    }
+
+    document.querySelectorAll('[data-copy]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var val = el.getAttribute('data-copy');
+        copy(val).then(function () {
+          showToast('Copied ' + val);
+          el.classList.add('copied');
+          setTimeout(function () { el.classList.remove('copied'); }, 900);
+        });
+      });
+    });
+  })();
+</script>
+</body>
+</html>

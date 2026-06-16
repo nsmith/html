@@ -1,0 +1,350 @@
+<!doctype html>
+<!--
+  TEMPLATE: Annotated Pull Request
+  USE: A single self-contained page for reviewing a code change. Shows a PR header,
+       a risk map, and file diffs with inline margin review notes (severity-tagged).
+  HOW TO CUSTOMIZE: Search for "REPLACE:" comments. Replace the sample PR metadata,
+       diff hunks, and review notes with your own. Severity classes: .sev-block (red),
+       .sev-nit (amber), .sev-safe (green). Everything is inline — no external assets.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- REPLACE: page title -->
+<title>PR #128 — Review · acme/web</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --panel: #171a23;
+    --panel-2: #1d212c;
+    --border: #2a2f3d;
+    --text: #e6e9ef;
+    --muted: #9aa3b2;
+    --faint: #6b7385;
+    --accent: #6ea8fe;
+    --add-bg: rgba(63, 185, 80, 0.12);
+    --add-mark: #3fb950;
+    --del-bg: rgba(248, 81, 73, 0.12);
+    --del-mark: #f85149;
+    --block: #f85149;
+    --block-bg: rgba(248, 81, 73, 0.14);
+    --nit: #d29922;
+    --nit-bg: rgba(210, 153, 34, 0.14);
+    --safe: #3fb950;
+    --safe-bg: rgba(63, 185, 80, 0.14);
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --radius: 10px;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --panel-2: #f0f2f5;
+      --border: #d8dce3;
+      --text: #1b1f27;
+      --muted: #5a6373;
+      --faint: #8b93a3;
+      --accent: #1f6feb;
+      --add-bg: rgba(63, 185, 80, 0.14);
+      --del-bg: rgba(248, 81, 73, 0.12);
+      --block-bg: rgba(248, 81, 73, 0.10);
+      --nit-bg: rgba(210, 153, 34, 0.14);
+      --safe-bg: rgba(63, 185, 80, 0.14);
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 32px 20px 80px; }
+
+  /* ---- Header ---- */
+  header.pr { border-bottom: 1px solid var(--border); padding-bottom: 22px; margin-bottom: 28px; }
+  .crumb { font-family: var(--mono); font-size: 13px; color: var(--muted); margin: 0 0 6px; }
+  h1.pr-title { font-size: 26px; line-height: 1.25; margin: 0 0 14px; font-weight: 650; }
+  .pr-meta { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; font-size: 14px; color: var(--muted); }
+  .avatar {
+    width: 30px; height: 30px; border-radius: 50%; flex: none;
+    background: linear-gradient(135deg, #6ea8fe, #b07cff);
+    color: #fff; font-weight: 600; font-size: 12px;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .who { display: inline-flex; align-items: center; gap: 9px; }
+  .who strong { color: var(--text); font-weight: 600; }
+  .branch {
+    font-family: var(--mono); font-size: 12.5px;
+    background: var(--panel-2); border: 1px solid var(--border);
+    border-radius: 999px; padding: 3px 11px; color: var(--text);
+  }
+  .stat-add { color: var(--add-mark); font-family: var(--mono); font-weight: 600; }
+  .stat-del { color: var(--del-mark); font-family: var(--mono); font-weight: 600; }
+
+  section { margin-bottom: 32px; }
+  h2.sec { font-size: 13px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--faint); margin: 0 0 14px; font-weight: 600; }
+
+  .summary { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 22px; }
+  .summary ul { margin: 0; padding-left: 20px; }
+  .summary li { margin: 5px 0; color: var(--text); }
+  .summary li::marker { color: var(--accent); }
+
+  /* ---- Risk map ---- */
+  .riskmap { display: grid; gap: 10px; }
+  .risk-row {
+    display: flex; align-items: center; gap: 14px;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px 16px;
+  }
+  .risk-row .path { font-family: var(--mono); font-size: 13.5px; flex: 1 1 auto; word-break: break-all; }
+  .risk-row .counts { font-family: var(--mono); font-size: 12.5px; color: var(--muted); white-space: nowrap; }
+
+  /* ---- Severity tags ---- */
+  .tag {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11.5px; font-weight: 600; letter-spacing: 0.02em;
+    border-radius: 999px; padding: 3px 10px; white-space: nowrap;
+    border: 1px solid transparent;
+  }
+  .tag svg { width: 11px; height: 11px; }
+  .sev-block { color: var(--block); background: var(--block-bg); border-color: var(--block); }
+  .sev-nit { color: var(--nit); background: var(--nit-bg); border-color: var(--nit); }
+  .sev-safe { color: var(--safe); background: var(--safe-bg); border-color: var(--safe); }
+
+  /* ---- File diffs ---- */
+  .file { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 22px; background: var(--panel); }
+  .file-head {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 12px 16px; background: var(--panel-2); border-bottom: 1px solid var(--border);
+  }
+  .file-head .path { font-family: var(--mono); font-size: 13.5px; font-weight: 600; flex: 1 1 auto; word-break: break-all; }
+  .file-head .counts { font-family: var(--mono); font-size: 12.5px; }
+
+  .diff { margin: 0; font-family: var(--mono); font-size: 13px; line-height: 1.6; overflow-x: auto; }
+  .hunk-label {
+    color: var(--faint); background: var(--panel-2);
+    padding: 4px 16px; border-bottom: 1px solid var(--border);
+    font-size: 12px; white-space: pre;
+  }
+  .row { display: grid; grid-template-columns: 48px 16px 1fr; white-space: pre; }
+  .row .ln { text-align: right; padding-right: 12px; color: var(--faint); user-select: none; }
+  .row .gut { text-align: center; color: var(--faint); user-select: none; }
+  .row .code { padding-right: 16px; }
+  .row.add { background: var(--add-bg); }
+  .row.add .gut { color: var(--add-mark); }
+  .row.del { background: var(--del-bg); }
+  .row.del .gut { color: var(--del-mark); }
+
+  /* ---- Inline review note ---- */
+  .note {
+    margin: 0; padding: 14px 16px 14px 18px;
+    border-top: 1px solid var(--border);
+    border-left: 3px solid var(--faint);
+    background: var(--panel);
+    font-family: var(--sans); font-size: 14px;
+  }
+  .note.is-block { border-left-color: var(--block); }
+  .note.is-nit { border-left-color: var(--nit); }
+  .note.is-safe { border-left-color: var(--safe); }
+  .note-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
+  .note-line { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+  .note p { margin: 4px 0; color: var(--text); }
+  .note code {
+    font-family: var(--mono); font-size: 0.9em;
+    background: var(--panel-2); border: 1px solid var(--border);
+    border-radius: 5px; padding: 1px 5px;
+  }
+
+  /* ---- Next steps ---- */
+  .next { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 22px; }
+  .next ol { margin: 0; padding-left: 22px; }
+  .next li { margin: 6px 0; }
+
+  footer { color: var(--faint); font-size: 12.5px; text-align: center; border-top: 1px solid var(--border); padding-top: 22px; margin-top: 40px; }
+
+  @media (max-width: 560px) {
+    h1.pr-title { font-size: 22px; }
+    .row { grid-template-columns: 36px 14px 1fr; }
+  }
+</style>
+</head>
+<body>
+<main class="wrap">
+
+  <!-- ============ PR HEADER ============ -->
+  <header class="pr">
+    <!-- REPLACE: repo + PR number -->
+    <p class="crumb">acme/web · Pull Request #128</p>
+    <!-- REPLACE: PR title -->
+    <h1 class="pr-title">Add optimistic updates to the task list</h1>
+    <div class="pr-meta">
+      <span class="who">
+        <!-- REPLACE: author initials + name + timestamp -->
+        <span class="avatar" aria-hidden="true">MO</span>
+        <span><strong>Mira Okafor</strong> opened 2 days ago</span>
+      </span>
+      <!-- REPLACE: source → target branch -->
+      <span class="branch">mo/optimistic-tasks → main</span>
+      <!-- REPLACE: diff stats -->
+      <span><span class="stat-add">+86</span> <span class="stat-del">−24</span> · 3 files</span>
+    </div>
+  </header>
+
+  <!-- ============ SUMMARY ============ -->
+  <section>
+    <h2 class="sec">What this PR does</h2>
+    <div class="summary">
+      <!-- REPLACE: bullet summary of the change -->
+      <ul>
+        <li>Applies task edits to the cache immediately, before the server confirms.</li>
+        <li>Rolls back to the previous state if the mutation fails.</li>
+        <li>Adds a small toast to surface sync errors to the user.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============ RISK MAP ============ -->
+  <section>
+    <h2 class="sec">Risk map</h2>
+    <div class="riskmap">
+      <!-- REPLACE: one row per changed file. Link href points to the file section below. -->
+      <div class="risk-row">
+        <a class="path" href="#file-hook">src/hooks/useOptimisticTasks.ts</a>
+        <span class="tag sev-block">
+          <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM7.25 4.5h1.5v4.5h-1.5V4.5Zm0 6h1.5V12h-1.5v-1.5Z"/></svg>
+          needs attention
+        </span>
+        <span class="counts"><span class="stat-add">+52</span> <span class="stat-del">−0</span></span>
+      </div>
+      <div class="risk-row">
+        <a class="path" href="#file-list">src/components/TaskList.tsx</a>
+        <span class="tag sev-nit">
+          <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 1.5 14.5 13H1.5L8 1.5Zm-.75 4.5v3.5h1.5V6h-1.5Zm0 4.5V12h1.5v-1.5h-1.5Z"/></svg>
+          worth a look
+        </span>
+        <span class="counts"><span class="stat-add">+22</span> <span class="stat-del">−18</span></span>
+      </div>
+      <div class="risk-row">
+        <a class="path" href="#file-types">src/types/task.ts</a>
+        <span class="tag sev-safe">
+          <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6.5 10.6 3.9 8l-1 1 3.6 3.6L13.1 6 12 4.9l-5.5 5.7Z"/></svg>
+          safe
+        </span>
+        <span class="counts"><span class="stat-add">+12</span> <span class="stat-del">−6</span></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FILES ============ -->
+  <section>
+    <h2 class="sec">Files changed</h2>
+
+    <!-- ----- FILE 1 ----- -->
+    <!-- REPLACE: file id, path, severity tag, and diff hunk below -->
+    <article class="file" id="file-hook">
+      <div class="file-head">
+        <span class="path">src/hooks/useOptimisticTasks.ts</span>
+        <span class="tag sev-block">needs attention</span>
+        <span class="counts"><span class="stat-add">+52</span> <span class="stat-del">−0</span></span>
+      </div>
+      <div class="diff" role="img" aria-label="Code diff for useOptimisticTasks.ts">
+        <div class="hunk-label">@@ -0,0 +1,14 @@ useOptimisticTasks.ts</div>
+        <div class="row add"><span class="ln">8</span><span class="gut">+</span><span class="code">export function useUpdateTask() {</span></div>
+        <div class="row add"><span class="ln">9</span><span class="gut">+</span><span class="code">  const qc = useQueryClient();</span></div>
+        <div class="row add"><span class="ln">10</span><span class="gut">+</span><span class="code">  return useMutation({</span></div>
+        <div class="row add"><span class="ln">11</span><span class="gut">+</span><span class="code">    onMutate: async (next) => {</span></div>
+        <div class="row add"><span class="ln">12</span><span class="gut">+</span><span class="code">      const prev = qc.getQueryData(key);</span></div>
+        <div class="row add"><span class="ln">13</span><span class="gut">+</span><span class="code">      qc.setQueryData(key, applyEdit(prev, next));</span></div>
+        <div class="row add"><span class="ln">14</span><span class="gut">+</span><span class="code">      return { prev };</span></div>
+        <div class="row add"><span class="ln">15</span><span class="gut">+</span><span class="code">    },</span></div>
+      </div>
+      <!-- REPLACE: review note. Classes: is-block / is-nit / is-safe. Tag must match. -->
+      <div class="note is-block">
+        <div class="note-head">
+          <span class="tag sev-block">blocking</span>
+          <span class="note-line">line 11</span>
+        </div>
+        <p><code>onMutate</code> doesn't call <code>qc.cancelQueries(key)</code> first. An in-flight refetch can resolve after we set optimistic data and overwrite it, so the UI silently reverts. Cancel queries before reading the snapshot.</p>
+      </div>
+    </article>
+
+    <!-- ----- FILE 2 ----- -->
+    <article class="file" id="file-list">
+      <div class="file-head">
+        <span class="path">src/components/TaskList.tsx</span>
+        <span class="tag sev-nit">worth a look</span>
+        <span class="counts"><span class="stat-add">+22</span> <span class="stat-del">−18</span></span>
+      </div>
+      <div class="diff" role="img" aria-label="Code diff for TaskList.tsx">
+        <div class="hunk-label">@@ -40,6 +40,6 @@ function TaskList()</div>
+        <div class="row del"><span class="ln">42</span><span class="gut">−</span><span class="code">  const { mutate } = useUpdateTaskOld();</span></div>
+        <div class="row add"><span class="ln">42</span><span class="gut">+</span><span class="code">  const { mutate } = useUpdateTask();</span></div>
+        <div class="row"><span class="ln">43</span><span class="gut"> </span><span class="code">  return (</span></div>
+        <div class="row"><span class="ln">44</span><span class="gut"> </span><span class="code">    &lt;ul&gt;</span></div>
+        <div class="row add"><span class="ln">45</span><span class="gut">+</span><span class="code">      {tasks.map((t) =&gt; (</span></div>
+        <div class="row add"><span class="ln">46</span><span class="gut">+</span><span class="code">        &lt;TaskRow key={t.id} task={t} onSave={mutate} /&gt;</span></div>
+        <div class="row add"><span class="ln">47</span><span class="gut">+</span><span class="code">      ))}</span></div>
+      </div>
+      <div class="note is-nit">
+        <div class="note-head">
+          <span class="tag sev-nit">nit</span>
+          <span class="note-line">line 46</span>
+        </div>
+        <p>Passing <code>mutate</code> straight to <code>onSave</code> creates a new reference each render. Fine for now, but wrap it in <code>useCallback</code> if <code>TaskRow</code> gets memoized later.</p>
+      </div>
+    </article>
+
+    <!-- ----- FILE 3 ----- -->
+    <article class="file" id="file-types">
+      <div class="file-head">
+        <span class="path">src/types/task.ts</span>
+        <span class="tag sev-safe">safe</span>
+        <span class="counts"><span class="stat-add">+12</span> <span class="stat-del">−6</span></span>
+      </div>
+      <div class="diff" role="img" aria-label="Code diff for task.ts">
+        <div class="hunk-label">@@ -3,4 +3,4 @@ export interface Task</div>
+        <div class="row"><span class="ln">3</span><span class="gut"> </span><span class="code">export interface Task {</span></div>
+        <div class="row"><span class="ln">4</span><span class="gut"> </span><span class="code">  id: string;</span></div>
+        <div class="row del"><span class="ln">5</span><span class="gut">−</span><span class="code">  status: string;</span></div>
+        <div class="row add"><span class="ln">5</span><span class="gut">+</span><span class="code">  status: "todo" | "doing" | "done";</span></div>
+        <div class="row"><span class="ln">6</span><span class="gut"> </span><span class="code">}</span></div>
+      </div>
+      <div class="note is-safe">
+        <div class="note-head">
+          <span class="tag sev-safe">safe</span>
+          <span class="note-line">line 5</span>
+        </div>
+        <p>Tightening <code>status</code> to a union is a clean improvement. No concerns.</p>
+      </div>
+    </article>
+  </section>
+
+  <!-- ============ NEXT STEPS ============ -->
+  <section>
+    <h2 class="sec">Suggested next steps</h2>
+    <div class="next">
+      <!-- REPLACE: actionable follow-ups -->
+      <ol>
+        <li>Add <code>qc.cancelQueries(key)</code> in <code>onMutate</code> and an <code>onError</code> rollback to the snapshot.</li>
+        <li>Add a test that simulates a failed mutation and asserts the list reverts.</li>
+        <li>Re-request review once the blocking note is resolved.</li>
+      </ol>
+    </div>
+  </section>
+
+  <footer>
+    <!-- REPLACE: footer / reviewer note -->
+    Reviewed by you · Generated for ht-ml.app
+  </footer>
+
+</main>
+</body>
+</html>

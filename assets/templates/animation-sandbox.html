@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<!--
+  TEMPLATE: Animation Sandbox
+  An isolated CSS transition you can study and tune live. Use the duration
+  slider, easing dropdown, and replay button to feel how timing changes motion.
+
+  HOW TO USE:
+    1. Edit the text/headings marked with <!-- REPLACE: ... --> comments.
+    2. Swap the animated element (the card with the SVG icon) for your own
+       inline SVG or CSS shape — keep it inline, no external images.
+    3. Tweak the default duration / easing in the :root variables if you like.
+    4. Publish the single file to ht-ml.app. Everything is self-contained:
+       no external CSS, JS, fonts, or images. Works fully offline.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<!-- REPLACE: page title shown in the browser tab -->
+<title>Animation Sandbox</title>
+<style>
+  :root {
+    /* REPLACE: default animation settings (also driven live by the controls) */
+    --duration: 600ms;
+    --easing: cubic-bezier(0.34, 1.56, 0.64, 1); /* spring-like ease-out */
+
+    /* Palette */
+    --bg: #0f1117;
+    --bg-soft: #171a23;
+    --panel: #1d2130;
+    --panel-2: #232838;
+    --border: #2c3245;
+    --text: #e8ebf2;
+    --muted: #9aa3b8;
+    --accent: #6d8bff;
+    --accent-2: #9d6dff;
+    --good: #54d6a4;
+    --shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+    --radius: 16px;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+      Arial, "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  body {
+    margin: 0;
+    font-family: var(--font);
+    color: var(--text);
+    background:
+      radial-gradient(1200px 600px at 80% -10%, rgba(109, 139, 255, 0.18), transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, rgba(157, 109, 255, 0.16), transparent 60%),
+      var(--bg);
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: clamp(1rem, 4vw, 3rem);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    width: 100%;
+    max-width: 760px;
+  }
+
+  header.intro {
+    margin-bottom: 1.75rem;
+  }
+
+  .eyebrow {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 0.5rem;
+  }
+
+  h1 {
+    margin: 0 0 0.5rem;
+    font-size: clamp(1.6rem, 4vw, 2.25rem);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+
+  .intro p {
+    margin: 0;
+    color: var(--muted);
+    max-width: 52ch;
+  }
+
+  /* ---------- Stage: the isolated animation lives here ---------- */
+  .stage {
+    position: relative;
+    background:
+      linear-gradient(180deg, var(--bg-soft), var(--panel));
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: clamp(1.5rem, 5vw, 3rem);
+    display: grid;
+    place-items: center;
+    min-height: 280px;
+    overflow: hidden;
+    margin-bottom: 1.25rem;
+  }
+
+  /* subtle grid backdrop, pure CSS */
+  .stage::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    background-size: 28px 28px;
+    -webkit-mask-image: radial-gradient(circle at center, #000 40%, transparent 78%);
+    mask-image: radial-gradient(circle at center, #000 40%, transparent 78%);
+    pointer-events: none;
+  }
+
+  /*
+    REPLACE: the animated element.
+    Default: a card that lifts, scales, rotates and reveals a check icon.
+    The classes .is-playing toggle the animated end-state. Duration & easing
+    are CSS variables set live by JavaScript from the controls.
+  */
+  .card {
+    position: relative;
+    z-index: 1;
+    width: 168px;
+    height: 168px;
+    border-radius: 22px;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(145deg, var(--accent), var(--accent-2));
+    box-shadow:
+      0 10px 30px rgba(109, 139, 255, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.25);
+
+    /* resting state */
+    transform: translateY(24px) scale(0.82) rotate(-6deg);
+    opacity: 0;
+
+    transition:
+      transform var(--duration) var(--easing),
+      opacity calc(var(--duration) * 0.6) ease-out;
+  }
+
+  .card.is-playing {
+    /* animated end-state */
+    transform: translateY(0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+
+  .card .icon {
+    width: 72px;
+    height: 72px;
+    color: #fff;
+  }
+
+  /* the checkmark stroke draws in as part of the reveal */
+  .card .icon path {
+    stroke-dasharray: 48;
+    stroke-dashoffset: 48;
+    transition: stroke-dashoffset var(--duration) var(--easing)
+      calc(var(--duration) * 0.25);
+  }
+
+  .card.is-playing .icon path {
+    stroke-dashoffset: 0;
+  }
+
+  .hint {
+    position: absolute;
+    bottom: 0.85rem;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--muted);
+    z-index: 1;
+  }
+
+  /* ---------- Controls panel ---------- */
+  .controls {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem clamp(1rem, 3vw, 1.5rem);
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: 1fr 1fr auto;
+    align-items: end;
+  }
+
+  @media (max-width: 560px) {
+    .controls { grid-template-columns: 1fr; }
+  }
+
+  .field { display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }
+
+  .field label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text);
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .field .val {
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    outline-offset: 4px;
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid var(--accent);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid var(--accent);
+    cursor: pointer;
+  }
+
+  select {
+    width: 100%;
+    appearance: none;
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.6rem 2.2rem 0.6rem 0.8rem;
+    font: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+    /* inline SVG chevron, no external asset */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' fill='none' stroke='%239aa3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.8rem center;
+  }
+
+  .replay {
+    appearance: none;
+    border: none;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 600;
+    color: #fff;
+    background: linear-gradient(145deg, var(--accent), var(--accent-2));
+    padding: 0.7rem 1.25rem;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 6px 18px rgba(109, 139, 255, 0.35);
+    transition: transform 120ms ease, box-shadow 120ms ease;
+    white-space: nowrap;
+  }
+  .replay:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(109, 139, 255, 0.45); }
+  .replay:active { transform: translateY(1px); }
+  .replay svg { width: 18px; height: 18px; }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  footer {
+    margin-top: 1.5rem;
+    font-size: 0.78rem;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card, .card .icon path { transition-duration: 1ms !important; }
+  }
+</style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="intro">
+      <!-- REPLACE: eyebrow / kicker label -->
+      <span class="eyebrow">Animation Sandbox</span>
+      <!-- REPLACE: main heading -->
+      <h1>Tune one transition until it feels right</h1>
+      <!-- REPLACE: short description of what you are demonstrating -->
+      <p>An isolated reveal animation. Drag the duration, swap the easing curve,
+        and replay to feel how timing shapes motion.</p>
+    </header>
+
+    <section class="stage" aria-label="Animation preview">
+      <!-- REPLACE: this whole .card is the animated element. Swap for your own
+           inline SVG or CSS shape — keep everything inline (no <img src>). -->
+      <div class="card" id="card" role="img" aria-label="Animated card revealing a checkmark">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.5"
+                stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </div>
+      <p class="hint" id="hint">Click the stage or press Replay to animate</p>
+    </section>
+
+    <section class="controls" aria-label="Animation controls">
+      <div class="field">
+        <label for="duration">
+          <span>Duration</span>
+          <span class="val" id="durationVal">600 ms</span>
+        </label>
+        <input type="range" id="duration" name="duration"
+               min="100" max="2000" step="50" value="600"
+               aria-describedby="durationVal" />
+      </div>
+
+      <div class="field">
+        <label for="easing">Easing</label>
+        <select id="easing" name="easing">
+          <option value="linear">Linear</option>
+          <option value="ease">Ease</option>
+          <option value="ease-in">Ease in</option>
+          <option value="ease-out">Ease out</option>
+          <option value="ease-in-out">Ease in-out</option>
+          <option value="cubic-bezier(0.34, 1.56, 0.64, 1)" selected>Spring (overshoot)</option>
+        </select>
+      </div>
+
+      <button type="button" class="replay" id="replay">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M21 12a9 9 0 1 1-3-6.7" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M21 3v6h-6" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        Replay
+      </button>
+    </section>
+
+    <footer>Built with a single self-contained HTML file. Works offline.</footer>
+  </main>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var root = document.documentElement;
+      var card = document.getElementById("card");
+      var stage = card.closest(".stage");
+      var hint = document.getElementById("hint");
+
+      var durationInput = document.getElementById("duration");
+      var durationVal = document.getElementById("durationVal");
+      var easingInput = document.getElementById("easing");
+      var replayBtn = document.getElementById("replay");
+
+      function applyDuration() {
+        var ms = parseInt(durationInput.value, 10);
+        root.style.setProperty("--duration", ms + "ms");
+        durationVal.textContent = ms + " ms";
+      }
+
+      function applyEasing() {
+        root.style.setProperty("--easing", easingInput.value);
+      }
+
+      // Replay: clear, force reflow so the transition restarts, then play.
+      function play() {
+        card.classList.remove("is-playing");
+        // force reflow to reset the transition cleanly
+        void card.offsetWidth;
+        card.classList.add("is-playing");
+        if (hint) hint.style.opacity = "0.4";
+      }
+
+      durationInput.addEventListener("input", function () {
+        applyDuration();
+        play();
+      });
+      easingInput.addEventListener("change", function () {
+        applyEasing();
+        play();
+      });
+      replayBtn.addEventListener("click", play);
+      stage.addEventListener("click", function (e) {
+        // ignore clicks that originate on controls (none here, but safe)
+        if (e.target.closest(".controls")) return;
+        play();
+      });
+
+      // Initialize from default control values, then play once on load.
+      applyDuration();
+      applyEasing();
+      window.requestAnimationFrame(play);
+    })();
+  </script>
+</body>
+</html>

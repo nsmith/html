@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<!--
+  TEMPLATE: Module Map
+  PURPOSE:  A single-page package/module dependency visualization. Shows modules as
+            boxes connected by arrows, with one "hot path" highlighted through the graph.
+  HOW TO USE:
+    1. Replace the title, subtitle, and intro text below.
+    2. Edit the SVG <g> groups in the diagram to match your own modules and arrows.
+       Each module is a <g class="node"> with a <rect> and label text.
+       Each connection is a <path class="edge"> (add class "hot" for the hot path).
+    3. Update the "Modules" list and "Hot path" steps to match your diagram.
+    4. Everything is self-contained: no external CSS, JS, fonts, or images. Works offline.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- REPLACE: page title -->
+<title>Module Map — payments service</title>
+<style>
+  :root {
+    --bg: #0f1320;
+    --panel: #161c2e;
+    --panel-2: #1d2538;
+    --ink: #e8ecf6;
+    --muted: #97a1bd;
+    --line: #2b3450;
+    --accent: #6ea8fe;
+    --hot: #ff7b54;
+    --hot-soft: #ffb59b;
+    --ok: #58d6a8;
+    --node: #232c44;
+    --node-edge: #3a456a;
+    --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background:
+      radial-gradient(1200px 600px at 80% -10%, #1b2540 0%, transparent 60%),
+      radial-gradient(900px 500px at -10% 10%, #18203a 0%, transparent 55%),
+      var(--bg);
+    color: var(--ink);
+    font-family: var(--font);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 48px 24px 96px; }
+
+  header.page { margin-bottom: 28px; }
+  .eyebrow {
+    display: inline-block;
+    font-size: 12px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: rgba(110,168,254,.1);
+    border: 1px solid rgba(110,168,254,.25);
+    padding: 4px 10px;
+    border-radius: 999px;
+    margin-bottom: 16px;
+  }
+  h1 { font-size: clamp(28px, 5vw, 40px); line-height: 1.15; margin: 0 0 10px; letter-spacing: -.02em; }
+  .subtitle { color: var(--muted); font-size: 17px; margin: 0; max-width: 62ch; }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    margin: 24px 0 8px;
+    font-size: 13.5px;
+    color: var(--muted);
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 8px; }
+  .swatch { width: 22px; height: 0; border-top: 3px solid var(--line); border-radius: 3px; }
+  .swatch.normal { border-color: var(--node-edge); }
+  .swatch.hot { border-color: var(--hot); border-top-style: solid; }
+  .swatch.box { width: 14px; height: 14px; border: 0; background: var(--node); border-radius: 4px; box-shadow: inset 0 0 0 1px var(--node-edge); }
+
+  .card {
+    background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 18px;
+    margin: 18px 0 32px;
+    box-shadow: 0 24px 60px -30px rgba(0,0,0,.7);
+  }
+  .diagram { width: 100%; height: auto; display: block; }
+
+  /* SVG styling */
+  .node rect {
+    fill: var(--node);
+    stroke: var(--node-edge);
+    stroke-width: 1.5;
+    rx: 12;
+  }
+  .node.hot rect { stroke: var(--hot); stroke-width: 2; fill: #2b2436; }
+  .node.entry rect { stroke: var(--accent); }
+  .node .title { fill: var(--ink); font: 600 15px var(--font); }
+  .node .meta { fill: var(--muted); font: 12px var(--mono); }
+  .node.hot .title { fill: var(--hot-soft); }
+
+  .edge { fill: none; stroke: var(--node-edge); stroke-width: 2; }
+  .edge.hot { stroke: var(--hot); stroke-width: 3; }
+  .edge-label { fill: var(--muted); font: 11px var(--mono); }
+
+  h2 { font-size: 21px; margin: 36px 0 14px; letter-spacing: -.01em; }
+  h2 .tag { font: 600 11px var(--mono); color: var(--hot); border: 1px solid rgba(255,123,84,.4); padding: 2px 8px; border-radius: 999px; vertical-align: middle; margin-left: 8px; }
+
+  ul.modules { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+  ul.modules li {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 12px;
+    align-items: baseline;
+    padding: 12px 14px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+  }
+  ul.modules code { font-family: var(--mono); color: var(--accent); font-size: 13.5px; white-space: nowrap; }
+  ul.modules .desc { color: var(--muted); font-size: 14.5px; }
+
+  ol.hotpath { counter-reset: step; list-style: none; padding: 0; margin: 0; display: grid; gap: 0; }
+  ol.hotpath li {
+    counter-increment: step;
+    position: relative;
+    padding: 12px 0 16px 44px;
+    border-left: 2px solid var(--line);
+    margin-left: 14px;
+  }
+  ol.hotpath li:last-child { border-left-color: transparent; }
+  ol.hotpath li::before {
+    content: counter(step);
+    position: absolute;
+    left: -15px;
+    top: 8px;
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--hot);
+    color: #1a0f08;
+    font: 700 13px var(--mono);
+    box-shadow: 0 0 0 4px var(--bg);
+  }
+  ol.hotpath li code { font-family: var(--mono); color: var(--hot-soft); font-size: 13.5px; }
+  ol.hotpath li .note { display: block; color: var(--muted); font-size: 14px; margin-top: 2px; }
+
+  footer { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+
+  @media (max-width: 560px) {
+    ul.modules li { grid-template-columns: 1fr; gap: 4px; }
+  }
+</style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="page">
+      <!-- REPLACE: eyebrow / category label -->
+      <span class="eyebrow">Architecture · Module Map</span>
+      <!-- REPLACE: main heading -->
+      <h1>How the payments service fits together</h1>
+      <!-- REPLACE: one or two sentence summary -->
+      <p class="subtitle">A map of the core modules and the dependencies between them. The highlighted path traces a single charge request from the API edge down to the database.</p>
+
+      <div class="legend" aria-hidden="true">
+        <span><i class="swatch box"></i> Module</span>
+        <span><i class="swatch normal"></i> Dependency</span>
+        <span><i class="swatch hot"></i> Hot path (charge request)</span>
+      </div>
+    </header>
+
+    <!-- ============================================================= -->
+    <!-- DIAGRAM. Edit the <g class="node"> boxes and <path class="edge"> arrows. -->
+    <!-- Add class "hot" to nodes/edges that belong to the highlighted path.       -->
+    <!-- ============================================================= -->
+    <section class="card" aria-label="Module dependency diagram">
+      <svg class="diagram" viewBox="0 0 760 520" role="img"
+           aria-label="Module dependency graph with a highlighted charge-request hot path running from the API gateway through the payments core to the database.">
+        <defs>
+          <marker id="arrow" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+            <path d="M0,0 L9,4.5 L0,9 Z" fill="#3a456a"></path>
+          </marker>
+          <marker id="arrow-hot" markerWidth="10" markerHeight="10" refX="7.5" refY="5" orient="auto">
+            <path d="M0,0 L10,5 L0,10 Z" fill="#ff7b54"></path>
+          </marker>
+        </defs>
+
+        <!-- EDGES (draw first so boxes sit on top) -->
+        <!-- hot path edges -->
+        <path class="edge hot" d="M150,86 C150,140 150,140 150,168" marker-end="url(#arrow-hot)"></path>
+        <path class="edge hot" d="M150,228 C150,270 380,250 380,288" marker-end="url(#arrow-hot)"></path>
+        <path class="edge hot" d="M380,348 C380,392 380,392 380,420" marker-end="url(#arrow-hot)"></path>
+
+        <!-- normal edges -->
+        <path class="edge" d="M250,198 C330,198 330,140 410,118" marker-end="url(#arrow)"></path>
+        <path class="edge" d="M450,348 C450,388 430,392 400,418" marker-end="url(#arrow)"></path>
+        <path class="edge" d="M610,148 C610,250 480,300 462,310" marker-end="url(#arrow)"></path>
+        <path class="edge" d="M310,318 C250,360 250,388 320,418" marker-end="url(#arrow)"></path>
+
+        <!-- edge labels -->
+        <text class="edge-label" x="160" y="132">routes</text>
+        <text class="edge-label" x="250" y="262">calls</text>
+        <text class="edge-label" x="390" y="392">persists</text>
+
+        <!-- NODES -->
+        <!-- entry / gateway -->
+        <g class="node entry hot" transform="translate(60,40)">
+          <rect width="180" height="46" rx="12"></rect>
+          <text class="title" x="16" y="22">API Gateway</text>
+          <text class="meta" x="16" y="38">api/gateway.ts</text>
+        </g>
+
+        <!-- routes layer -->
+        <g class="node hot" transform="translate(60,168)">
+          <rect width="190" height="60" rx="12"></rect>
+          <text class="title" x="16" y="26">Charge Router</text>
+          <text class="meta" x="16" y="44">api/routes/charges.ts</text>
+        </g>
+
+        <g class="node" transform="translate(410,90)">
+          <rect width="190" height="58" rx="12"></rect>
+          <text class="title" x="16" y="24">Auth Middleware</text>
+          <text class="meta" x="16" y="43">api/mw/auth.ts</text>
+        </g>
+
+        <!-- core domain -->
+        <g class="node hot" transform="translate(290,288)">
+          <rect width="180" height="60" rx="12"></rect>
+          <text class="title" x="16" y="26">Payments Core</text>
+          <text class="meta" x="16" y="44">core/payments.ts</text>
+        </g>
+
+        <g class="node" transform="translate(540,288)">
+          <rect width="160" height="58" rx="12"></rect>
+          <text class="title" x="16" y="24">Ledger</text>
+          <text class="meta" x="16" y="43">core/ledger.ts</text>
+        </g>
+
+        <!-- data layer -->
+        <g class="node hot" transform="translate(300,420)">
+          <rect width="170" height="58" rx="12"></rect>
+          <text class="title" x="16" y="24">Postgres Store</text>
+          <text class="meta" x="16" y="43">db/store.ts</text>
+        </g>
+      </svg>
+    </section>
+
+    <!-- ============================================================= -->
+    <!-- MODULE LIST. Keep in sync with the boxes above.               -->
+    <!-- ============================================================= -->
+    <h2>Modules</h2>
+    <ul class="modules">
+      <!-- REPLACE: one <li> per module -->
+      <li><code>api/gateway.ts</code><span class="desc">HTTP entry point. Parses requests and dispatches to routers.</span></li>
+      <li><code>api/routes/charges.ts</code><span class="desc">Validates charge payloads and invokes the payments core.</span></li>
+      <li><code>api/mw/auth.ts</code><span class="desc">Verifies API keys and attaches the caller to the request.</span></li>
+      <li><code>core/payments.ts</code><span class="desc">Business logic for authorizing and capturing charges.</span></li>
+      <li><code>core/ledger.ts</code><span class="desc">Records double-entry bookkeeping for each transaction.</span></li>
+      <li><code>db/store.ts</code><span class="desc">Connection pool and typed queries against Postgres.</span></li>
+    </ul>
+
+    <!-- ============================================================= -->
+    <!-- HOT PATH. The highlighted route through the graph, step by step. -->
+    <!-- ============================================================= -->
+    <h2>Hot path<span class="tag">charge request</span></h2>
+    <ol class="hotpath">
+      <!-- REPLACE: one <li> per step along the highlighted path -->
+      <li><code>api/gateway.ts</code>
+        <span class="note">Request lands at the gateway and is routed by path and method.</span></li>
+      <li><code>api/routes/charges.ts</code>
+        <span class="note">The charge router validates the body and reads the amount and currency.</span></li>
+      <li><code>core/payments.ts</code>
+        <span class="note">Payments core authorizes the charge and prepares a ledger entry.</span></li>
+      <li><code>db/store.ts</code>
+        <span class="note">The result is persisted in a single transaction and returned upstream.</span></li>
+    </ol>
+
+    <footer>
+      <!-- REPLACE: footer note, last-updated date, or source link -->
+      <p>Generated module map · last reviewed 2026-06 · edit the SVG and lists above to match your codebase.</p>
+    </footer>
+  </main>
+</body>
+</html>

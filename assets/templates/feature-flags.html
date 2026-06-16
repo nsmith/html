@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<!--
+  Template: Feature Flag Editor
+  Use: A self-contained single-page editor for grouped feature flags with
+       dependency warnings and a diff/JSON export. Edit the FLAGS data array
+       below and the REPLACE markers to fit your project, then publish to
+       ht-ml.app. No build step, no external assets — works offline.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- REPLACE: page title shown in the browser tab -->
+<title>Feature Flag Editor</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --panel: #171a23;
+    --panel-2: #1d212d;
+    --border: #272c3a;
+    --text: #e6e8ee;
+    --muted: #9aa3b5;
+    --faint: #6b7488;
+    --accent: #5b8cff;
+    --accent-soft: rgba(91, 140, 255, 0.14);
+    --green: #3ecf8e;
+    --green-soft: rgba(62, 207, 142, 0.14);
+    --warn: #ffb454;
+    --warn-soft: rgba(255, 180, 84, 0.12);
+    --warn-border: rgba(255, 180, 84, 0.4);
+    --del: #ff6b6b;
+    --radius: 12px;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: radial-gradient(1200px 600px at 50% -200px, #1a1f2e 0%, var(--bg) 60%);
+    color: var(--text);
+    font-family: var(--sans);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+  }
+
+  /* Header */
+  .breadcrumb {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--faint);
+    margin-bottom: 14px;
+    letter-spacing: 0.2px;
+  }
+  .breadcrumb b { color: var(--muted); font-weight: 500; }
+
+  h1 {
+    font-size: 26px;
+    margin: 0 0 8px;
+    letter-spacing: -0.4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .lede {
+    color: var(--muted);
+    margin: 0 0 28px;
+    max-width: 60ch;
+    font-size: 15px;
+  }
+
+  /* Dependency alert banner */
+  .alert {
+    display: none;
+    align-items: flex-start;
+    gap: 12px;
+    background: var(--warn-soft);
+    border: 1px solid var(--warn-border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 24px;
+    font-size: 14px;
+  }
+  .alert.show { display: flex; }
+  .alert svg { flex: 0 0 auto; margin-top: 1px; color: var(--warn); }
+  .alert strong { color: var(--warn); }
+  .alert ul { margin: 6px 0 0; padding-left: 18px; color: var(--muted); }
+  .alert li { margin: 2px 0; }
+
+  /* Flag groups */
+  .group {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 18px;
+    overflow: hidden;
+  }
+  .group-head {
+    padding: 16px 18px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .group-head h2 {
+    margin: 0;
+    font-size: 15px;
+    letter-spacing: 0.2px;
+  }
+  .group-head p {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: var(--faint);
+  }
+
+  .flag {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+  }
+  .flag:last-child { border-bottom: none; }
+  .flag-text { flex: 1 1 auto; min-width: 0; }
+  .flag-name {
+    font-family: var(--mono);
+    font-size: 14px;
+    color: var(--text);
+  }
+  .flag-name .badge {
+    font-family: var(--sans);
+    font-size: 11px;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border-radius: 6px;
+    padding: 1px 6px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+  .flag-desc {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 3px;
+  }
+  .flag-dep {
+    display: none;
+    font-size: 12px;
+    color: var(--warn);
+    margin-top: 5px;
+    align-items: center;
+    gap: 5px;
+  }
+  .flag.unmet .flag-dep { display: inline-flex; }
+  .flag.unmet { background: var(--warn-soft); }
+
+  /* Toggle switch */
+  .switch {
+    position: relative;
+    flex: 0 0 auto;
+    width: 44px;
+    height: 26px;
+  }
+  .switch input {
+    position: absolute;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    cursor: pointer;
+  }
+  .track {
+    position: absolute;
+    inset: 0;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    transition: background 0.18s ease, border-color 0.18s ease;
+  }
+  .track::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    background: var(--faint);
+    border-radius: 50%;
+    transition: transform 0.18s ease, background 0.18s ease;
+  }
+  .switch input:checked + .track {
+    background: var(--green-soft);
+    border-color: var(--green);
+  }
+  .switch input:checked + .track::after {
+    transform: translateX(18px);
+    background: var(--green);
+  }
+  .switch input:focus-visible + .track {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* Diff / export panel */
+  .export {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-top: 30px;
+    overflow: hidden;
+  }
+  .export-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .export-head h2 { margin: 0; font-size: 15px; }
+  .count {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--faint);
+    margin-left: 8px;
+  }
+  .count b { color: var(--accent); }
+
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  button {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--text);
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 12px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  button:hover { border-color: var(--accent); }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #0b1020;
+    font-weight: 600;
+  }
+  button.primary:hover { background: #6f9bff; }
+
+  pre {
+    margin: 0;
+    padding: 16px 18px;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.65;
+    overflow-x: auto;
+    white-space: pre;
+    color: var(--muted);
+  }
+  pre .add { color: var(--green); }
+  pre .del { color: var(--del); }
+  pre .empty { color: var(--faint); font-style: italic; }
+
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 28px;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--green);
+    color: #06281a;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 9px 16px;
+    border-radius: 999px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 520px) {
+    h1 { font-size: 22px; }
+    .flag { flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- REPLACE: breadcrumb path for your project -->
+  <nav class="breadcrumb"><b>acme</b> / config / <b>feature-flags</b></nav>
+
+  <!-- REPLACE: title + description -->
+  <h1>flags.production.json</h1>
+  <p class="lede">Toggle features below. Flags with unmet prerequisites are flagged inline, and the export panel emits only the lines that differ from defaults.</p>
+
+  <!-- Dependency alert (auto-shown by script) -->
+  <div class="alert" id="alert" role="alert" aria-live="polite">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+    <div>
+      <strong id="alertCount"></strong>
+      <ul id="alertList"></ul>
+    </div>
+  </div>
+
+  <!--
+    REPLACE: this is the flag model. Each flag:
+      key      unique id (used in export JSON)
+      label    monospace name shown to the user
+      desc     short explanation
+      default  the saved/default value (export diffs against this)
+      requires optional key of a prerequisite flag that must be ON
+    Add or remove <fieldset class="group"> sections freely.
+  -->
+  <main id="flags">
+
+    <fieldset class="group">
+      <div class="group-head">
+        <h2>Checkout</h2>
+        <p>Payment and cart experiments.</p>
+      </div>
+
+      <label class="flag" data-key="new_checkout" data-default="false">
+        <span class="flag-text">
+          <span class="flag-name">new_checkout</span>
+          <span class="flag-desc">Redesigned single-page checkout flow.</span>
+        </span>
+        <span class="switch"><input type="checkbox" aria-label="new_checkout"><span class="track"></span></span>
+      </label>
+
+      <label class="flag" data-key="express_pay" data-default="false" data-requires="new_checkout">
+        <span class="flag-text">
+          <span class="flag-name">express_pay <span class="badge">needs new_checkout</span></span>
+          <span class="flag-desc">One-tap wallet payments at checkout.</span>
+          <span class="flag-dep"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4"/><path d="M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg> Requires <code>new_checkout</code> to be enabled.</span>
+        </span>
+        <span class="switch"><input type="checkbox" aria-label="express_pay"><span class="track"></span></span>
+      </label>
+
+      <label class="flag" data-key="save_for_later" data-default="true">
+        <span class="flag-text">
+          <span class="flag-name">save_for_later</span>
+          <span class="flag-desc">Let customers move cart items to a saved list.</span>
+        </span>
+        <span class="switch"><input type="checkbox" aria-label="save_for_later"><span class="track"></span></span>
+      </label>
+    </fieldset>
+
+    <fieldset class="group">
+      <div class="group-head">
+        <h2>Search &amp; Discovery</h2>
+        <p>How customers find products.</p>
+      </div>
+
+      <label class="flag" data-key="semantic_search" data-default="false">
+        <span class="flag-text">
+          <span class="flag-name">semantic_search</span>
+          <span class="flag-desc">Vector-based natural language product search.</span>
+        </span>
+        <span class="switch"><input type="checkbox" aria-label="semantic_search"><span class="track"></span></span>
+      </label>
+
+      <label class="flag" data-key="search_suggestions" data-default="false" data-requires="semantic_search">
+        <span class="flag-text">
+          <span class="flag-name">search_suggestions <span class="badge">needs semantic_search</span></span>
+          <span class="flag-desc">Live autocomplete suggestions as you type.</span>
+          <span class="flag-dep"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4"/><path d="M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg> Requires <code>semantic_search</code> to be enabled.</span>
+        </span>
+        <span class="switch"><input type="checkbox" aria-label="search_suggestions"><span class="track"></span></span>
+      </label>
+    </fieldset>
+
+    <fieldset class="group">
+      <div class="group-head">
+        <h2>Platform</h2>
+        <p>Account-wide infrastructure switches.</p>
+      </div>
+
+      <label class="flag" data-key="dark_mode" data-default="true">
+        <span class="flag-text">
+          <span class="flag-name">dark_mode</span>
+          <span class="flag-desc">System-aware dark theme across the app.</span>
+        </span>
+        <span class="switch"><input type="checkbox" aria-label="dark_mode"><span class="track"></span></span>
+      </label>
+
+      <label class="flag" data-key="beta_analytics" data-default="false">
+        <span class="flag-text">
+          <span class="flag-name">beta_analytics</span>
+          <span class="flag-desc">Opt in to the new analytics dashboard.</span>
+        </span>
+        <span class="switch"><input type="checkbox" aria-label="beta_analytics"><span class="track"></span></span>
+      </label>
+    </fieldset>
+
+  </main>
+
+  <!-- Export / diff panel -->
+  <section class="export" aria-label="Pending changes">
+    <div class="export-head">
+      <div>
+        <h2 style="display:inline">Pending changes</h2>
+        <span class="count" id="count"><b>0</b> changed</span>
+      </div>
+      <div class="actions">
+        <button type="button" id="copyDiff">Copy diff</button>
+        <button type="button" id="copyJson">Copy full JSON</button>
+        <button type="button" id="reset">Reset</button>
+      </div>
+    </div>
+    <pre id="diff"><span class="empty">// no changes yet</span></pre>
+  </section>
+
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var flagEls = Array.prototype.slice.call(document.querySelectorAll(".flag"));
+  var flags = flagEls.map(function (el) {
+    return {
+      el: el,
+      key: el.getAttribute("data-key"),
+      def: el.getAttribute("data-default") === "true",
+      requires: el.getAttribute("data-requires") || null,
+      input: el.querySelector("input")
+    };
+  });
+
+  function byKey(k) {
+    for (var i = 0; i < flags.length; i++) { if (flags[i].key === k) return flags[i]; }
+    return null;
+  }
+
+  // Initialize each toggle to its default value.
+  flags.forEach(function (f) { f.input.checked = f.def; });
+
+  var diffEl = document.getElementById("diff");
+  var countEl = document.getElementById("count");
+  var alertEl = document.getElementById("alert");
+  var alertCount = document.getElementById("alertCount");
+  var alertList = document.getElementById("alertList");
+
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function render() {
+    // Dependency check: flag ON but its prerequisite OFF.
+    var unmet = [];
+    flags.forEach(function (f) {
+      var bad = false;
+      if (f.requires && f.input.checked) {
+        var dep = byKey(f.requires);
+        if (dep && !dep.input.checked) bad = true;
+      }
+      f.el.classList.toggle("unmet", bad);
+      if (bad) unmet.push(f);
+    });
+
+    if (unmet.length) {
+      alertEl.classList.add("show");
+      alertCount.textContent = unmet.length === 1
+        ? "1 flag is enabled without its prerequisite"
+        : unmet.length + " flags are enabled without their prerequisites";
+      alertList.innerHTML = unmet.map(function (f) {
+        return "<li><code>" + esc(f.key) + "</code> needs <code>" + esc(f.requires) + "</code></li>";
+      }).join("");
+    } else {
+      alertEl.classList.remove("show");
+    }
+
+    // Build diff vs defaults.
+    var changed = flags.filter(function (f) { return f.input.checked !== f.def; });
+    countEl.innerHTML = "<b>" + changed.length + "</b> changed";
+
+    if (!changed.length) {
+      diffEl.innerHTML = '<span class="empty">// no changes yet</span>';
+      return;
+    }
+    diffEl.innerHTML = changed.map(function (f) {
+      var del = '<span class="del">- "' + esc(f.key) + '": ' + f.def + '</span>';
+      var add = '<span class="add">+ "' + esc(f.key) + '": ' + f.input.checked + '</span>';
+      return del + "\n" + add;
+    }).join("\n");
+  }
+
+  function currentJson() {
+    var obj = {};
+    flags.forEach(function (f) { obj[f.key] = f.input.checked; });
+    return JSON.stringify(obj, null, 2);
+  }
+
+  function diffJson() {
+    var obj = {};
+    flags.forEach(function (f) { if (f.input.checked !== f.def) obj[f.key] = f.input.checked; });
+    return JSON.stringify(obj, null, 2);
+  }
+
+  function toast(msg) {
+    var t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function () { t.classList.remove("show"); }, 1600);
+  }
+
+  function copy(text, label) {
+    function fallback() {
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); } catch (e) {}
+      document.body.removeChild(ta);
+      toast(label + " copied");
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { toast(label + " copied"); }, fallback);
+    } else {
+      fallback();
+    }
+  }
+
+  flags.forEach(function (f) { f.input.addEventListener("change", render); });
+
+  document.getElementById("copyDiff").addEventListener("click", function () {
+    var d = diffJson();
+    copy(d === "{}" ? "{}" : d, "Diff");
+  });
+  document.getElementById("copyJson").addEventListener("click", function () {
+    copy(currentJson(), "JSON");
+  });
+  document.getElementById("reset").addEventListener("click", function () {
+    flags.forEach(function (f) { f.input.checked = f.def; });
+    render();
+    toast("Reset to defaults");
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

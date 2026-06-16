@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<!--
+  TEMPLATE: Feature Explainer
+  USE: Document a feature with an overview, collapsible detail sections, and an FAQ.
+       Single self-contained HTML file for publishing to ht-ml.app.
+  HOW TO CUSTOMIZE: Search for "REPLACE:" comments and the obvious placeholder text.
+       All styles/scripts are inline. No external resources. Works offline.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- REPLACE: page title shown in the browser tab -->
+<title>Smart Rate Limiting — Feature Guide</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #171a23;
+    --surface-2: #1d2030;
+    --border: #2a2e3f;
+    --text: #e7e9ee;
+    --muted: #9aa0b0;
+    --accent: #7c9cff;
+    --accent-soft: rgba(124, 156, 255, 0.14);
+    --ring: rgba(124, 156, 255, 0.5);
+    --radius: 12px;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f6f7fb;
+      --surface: #ffffff;
+      --surface-2: #f0f2f8;
+      --border: #e2e5ee;
+      --text: #1b1e28;
+      --muted: #5c6375;
+      --accent: #3b5bdb;
+      --accent-soft: rgba(59, 91, 219, 0.10);
+      --ring: rgba(59, 91, 219, 0.45);
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 1.5rem; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    line-height: 1.65;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); }
+  code {
+    font-family: var(--mono);
+    font-size: 0.88em;
+    background: var(--accent-soft);
+    color: var(--text);
+    padding: 0.12em 0.4em;
+    border-radius: 5px;
+  }
+  pre {
+    font-family: var(--mono);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    overflow-x: auto;
+    font-size: 0.85rem;
+    line-height: 1.55;
+  }
+  pre code { background: none; padding: 0; }
+
+  .wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 3rem 1.25rem 5rem;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+  @media (min-width: 900px) {
+    .wrap { grid-template-columns: 220px 1fr; gap: 3rem; align-items: start; }
+    .toc { position: sticky; top: 1.5rem; }
+  }
+
+  /* Header */
+  header.hero { grid-column: 1 / -1; }
+  .eyebrow {
+    display: inline-block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+    margin-bottom: 1rem;
+  }
+  h1 {
+    font-size: clamp(1.9rem, 4vw, 2.7rem);
+    line-height: 1.15;
+    margin: 0 0 0.75rem;
+    letter-spacing: -0.02em;
+  }
+  .lede {
+    font-size: 1.12rem;
+    color: var(--muted);
+    max-width: 60ch;
+    margin: 0 0 1.5rem;
+  }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-size: 0.82rem;
+  }
+  .pill {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    padding: 0.3rem 0.65rem;
+    border-radius: 999px;
+  }
+  .pill strong { color: var(--text); font-weight: 600; }
+
+  /* Table of contents */
+  .toc nav { font-size: 0.9rem; }
+  .toc h2 {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--muted);
+    margin: 0 0 0.75rem;
+  }
+  .toc ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.1rem; }
+  .toc a {
+    display: block;
+    text-decoration: none;
+    color: var(--muted);
+    padding: 0.35rem 0.6rem;
+    border-radius: 8px;
+    border-left: 2px solid transparent;
+  }
+  .toc a:hover { color: var(--text); background: var(--surface); }
+
+  main { min-width: 0; }
+  section { margin-bottom: 2.75rem; scroll-margin-top: 1.5rem; }
+  section > h2 {
+    font-size: 1.5rem;
+    letter-spacing: -0.01em;
+    margin: 0 0 0.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  section > h2 .icon { color: var(--accent); flex-shrink: 0; }
+  .section-sub { color: var(--muted); margin: 0 0 1.25rem; }
+
+  /* Overview cards */
+  .cards { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.1rem 1.2rem;
+  }
+  .card .icon { color: var(--accent); margin-bottom: 0.6rem; }
+  .card h3 { margin: 0 0 0.35rem; font-size: 1rem; }
+  .card p { margin: 0; color: var(--muted); font-size: 0.92rem; }
+
+  /* Collapsible detail sections */
+  details {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+  }
+  details[open] { border-color: var(--ring); }
+  summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 1rem 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    font-weight: 600;
+    user-select: none;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
+  .step-num {
+    flex-shrink: 0;
+    width: 1.7rem;
+    height: 1.7rem;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+  summary .chev {
+    margin-left: auto;
+    color: var(--muted);
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+  }
+  details[open] summary .chev { transform: rotate(90deg); }
+  .detail-body {
+    padding: 0 1.2rem 1.2rem;
+    color: var(--muted);
+  }
+  .detail-body :first-child { margin-top: 0; }
+  .detail-body p { margin: 0 0 0.85rem; }
+  .detail-body strong { color: var(--text); }
+
+  /* FAQ */
+  .faq summary { font-weight: 600; color: var(--text); }
+  .faq .detail-body { padding-top: 0.2rem; }
+
+  footer {
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--border);
+    padding-top: 1.5rem;
+    margin-top: 1rem;
+    color: var(--muted);
+    font-size: 0.88rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.25rem;
+    justify-content: space-between;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ============ HERO ============ -->
+  <header class="hero">
+    <!-- REPLACE: short category label -->
+    <span class="eyebrow">Feature Guide</span>
+    <!-- REPLACE: feature name -->
+    <h1>Smart Rate Limiting</h1>
+    <!-- REPLACE: one or two sentence summary of what this feature does and why it matters -->
+    <p class="lede">
+      Protect your API from bursts and abuse with per-key request budgets that
+      refill over time — no extra infrastructure, no guesswork.
+    </p>
+    <div class="meta">
+      <!-- REPLACE: relevant metadata pills (version, status, audience, etc.) -->
+      <span class="pill"><strong>v</strong>&nbsp;2.4</span>
+      <span class="pill">Status:&nbsp;<strong>Stable</strong></span>
+      <span class="pill">Audience:&nbsp;<strong>Backend devs</strong></span>
+    </div>
+  </header>
+
+  <!-- ============ TABLE OF CONTENTS ============ -->
+  <aside class="toc">
+    <nav aria-label="On this page">
+      <h2>On this page</h2>
+      <ul>
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#how-it-works">How it works</a></li>
+        <li><a href="#config">Configuration</a></li>
+        <li><a href="#faq">FAQ</a></li>
+      </ul>
+    </nav>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main>
+
+    <!-- ---- OVERVIEW ---- -->
+    <section id="overview">
+      <h2>
+        <svg class="icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4M12 8h.01"></path></svg>
+        Overview
+      </h2>
+      <p class="section-sub">
+        <!-- REPLACE: a high-level framing sentence -->
+        At a glance, here is what this feature gives you.
+      </p>
+      <div class="cards">
+        <!-- REPLACE: 3 key benefits / highlights -->
+        <div class="card">
+          <svg class="icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L3 14h9l-1 8 10-12h-9z"></path></svg>
+          <h3>Token-bucket budgets</h3>
+          <p>Each client gets a refillable budget so steady traffic always passes.</p>
+        </div>
+        <div class="card">
+          <svg class="icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          <h3>Abuse protection</h3>
+          <p>Bursts are smoothed out and bad actors are throttled automatically.</p>
+        </div>
+        <div class="card">
+          <svg class="icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"></path><path d="M7 14l4-4 3 3 5-6"></path></svg>
+          <h3>Clear feedback</h3>
+          <p>Standard headers tell callers exactly how much budget remains.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---- HOW IT WORKS (collapsible steps) ---- -->
+    <section id="how-it-works">
+      <h2>
+        <svg class="icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        How it works
+      </h2>
+      <p class="section-sub">
+        <!-- REPLACE: lead-in for the step-by-step breakdown. Click a step to expand. -->
+        Expand each step to see the details. The flow runs on every request.
+      </p>
+
+      <!-- REPLACE each <details> with your own step. Open the first by default. -->
+      <details open>
+        <summary>
+          <span class="step-num">1</span>
+          Identify the caller
+          <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg>
+        </summary>
+        <div class="detail-body">
+          <p>
+            Every incoming request is mapped to a <strong>bucket key</strong> —
+            typically the API token, but it can be an account ID or client IP.
+            Requests without a key fall into a shared anonymous bucket.
+          </p>
+          <pre><code>key = request.api_token ?? request.ip</code></pre>
+        </div>
+      </details>
+
+      <details>
+        <summary>
+          <span class="step-num">2</span>
+          Check the budget
+          <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg>
+        </summary>
+        <div class="detail-body">
+          <p>
+            Each bucket holds a number of <strong>tokens</strong>. A request
+            costs one token. If at least one token is available, the request
+            proceeds and the count is decremented.
+          </p>
+        </div>
+      </details>
+
+      <details>
+        <summary>
+          <span class="step-num">3</span>
+          Refill over time
+          <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg>
+        </summary>
+        <div class="detail-body">
+          <p>
+            Tokens regenerate at a fixed <strong>refill rate</strong> up to the
+            bucket's maximum. This lets short bursts through while keeping the
+            long-run average within your limit.
+          </p>
+        </div>
+      </details>
+
+      <details>
+        <summary>
+          <span class="step-num">4</span>
+          Respond
+          <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg>
+        </summary>
+        <div class="detail-body">
+          <p>
+            If the budget is exhausted, the API returns
+            <code>429 Too Many Requests</code> with a <code>Retry-After</code>
+            header. Otherwise the response carries the remaining count.
+          </p>
+        </div>
+      </details>
+    </section>
+
+    <!-- ---- CONFIGURATION ---- -->
+    <section id="config">
+      <h2>
+        <svg class="icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"></path></svg>
+        Configuration
+      </h2>
+      <p class="section-sub">
+        <!-- REPLACE: describe how to configure the feature -->
+        Set limits per route. Defaults apply when a field is omitted.
+      </p>
+      <!-- REPLACE: a representative config / code sample -->
+      <pre><code>rate_limit:
+  default:
+    capacity: 100      # max tokens in a bucket
+    refill_per_sec: 5  # tokens added each second
+  routes:
+    "POST /upload":
+      capacity: 10
+      refill_per_sec: 1</code></pre>
+    </section>
+
+    <!-- ---- FAQ ---- -->
+    <section id="faq">
+      <h2>
+        <svg class="icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path><circle cx="12" cy="12" r="10"></circle></svg>
+        Frequently asked questions
+      </h2>
+
+      <!-- REPLACE each FAQ item -->
+      <details class="faq">
+        <summary>
+          What happens when a client hits the limit?
+          <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg>
+        </summary>
+        <div class="detail-body">
+          <p>
+            They receive a <code>429</code> response with a <code>Retry-After</code>
+            header indicating how many seconds until a token is available again.
+          </p>
+        </div>
+      </details>
+
+      <details class="faq">
+        <summary>
+          Does this work across multiple servers?
+          <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg>
+        </summary>
+        <div class="detail-body">
+          <p>
+            Yes. Buckets are stored in a shared backend, so limits are enforced
+            consistently no matter which instance handles the request.
+          </p>
+        </div>
+      </details>
+
+      <details class="faq">
+        <summary>
+          Can I set different limits for trusted clients?
+          <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6"></path></svg>
+        </summary>
+        <div class="detail-body">
+          <p>
+            Absolutely — assign a custom bucket capacity per API key or tier to
+            give partners higher budgets.
+          </p>
+        </div>
+      </details>
+    </section>
+
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer>
+    <!-- REPLACE: footer details / last updated / links -->
+    <span>Last updated June 2026</span>
+    <span>Published on ht-ml.app</span>
+  </footer>
+
+</div>
+</body>
+</html>

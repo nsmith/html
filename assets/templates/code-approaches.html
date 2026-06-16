@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<!--
+  Template: Three Code Approaches
+  Use: A single-page, side-by-side comparison of three solution options with
+       trade-offs, code samples, pro/con lists, metric badges, and a final
+       recommendation. Ideal for documenting a technical decision.
+
+  How to use:
+   1. Replace everything marked <!-- REPLACE: ... --> and the obvious
+      placeholder text with your real content.
+   2. Keep three <article class="approach"> blocks (or add/remove to taste).
+   3. This file is fully self-contained (no external CSS/JS/fonts/images).
+      Publish it as-is to ht-ml.app.
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- REPLACE: page title shown in the browser tab -->
+<title>Three Code Approaches — Debounced Search</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #171a23;
+    --surface-2: #1e222e;
+    --border: #2a2f3d;
+    --text: #e7e9ee;
+    --muted: #9aa3b2;
+    --accent: #7c9cff;
+    --accent-soft: rgba(124, 156, 255, 0.14);
+    --good: #5fd39a;
+    --bad: #f08a8a;
+    --good-soft: rgba(95, 211, 154, 0.12);
+    --bad-soft: rgba(240, 138, 138, 0.12);
+    --radius: 14px;
+    --mono: ui-monospace, "SF Mono", "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(1200px 600px at 50% -10%, rgba(124,156,255,0.10), transparent 60%),
+      var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: clamp(1.5rem, 4vw, 3.5rem) clamp(1rem, 4vw, 2rem) 4rem;
+  }
+
+  /* Header */
+  .breadcrumb {
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+  }
+  .breadcrumb svg { width: 14px; height: 14px; flex: none; color: var(--accent); }
+  header h1 {
+    font-size: clamp(1.6rem, 3.4vw, 2.5rem);
+    line-height: 1.2;
+    margin: 0 0 0.75rem;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+  }
+  header p.lede {
+    color: var(--muted);
+    font-size: 1.05rem;
+    max-width: 65ch;
+    margin: 0;
+  }
+
+  /* Jump nav */
+  nav.jump {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 1.75rem 0 2.5rem;
+  }
+  nav.jump a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.85rem;
+    color: var(--text);
+    text-decoration: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 0.45rem 0.8rem;
+    border-radius: 999px;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  nav.jump a:hover, nav.jump a:focus-visible { border-color: var(--accent); background: var(--accent-soft); }
+  nav.jump .num { color: var(--accent); font-variant-numeric: tabular-nums; font-weight: 700; }
+
+  /* Approach cards */
+  .approach {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: clamp(1.25rem, 3vw, 2rem);
+    margin-bottom: 1.75rem;
+    scroll-margin-top: 1.5rem;
+  }
+  .approach-head { display: flex; gap: 1rem; align-items: flex-start; }
+  .approach-num {
+    font-family: var(--mono);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1.1;
+    flex: none;
+    width: 2.4ch;
+  }
+  .approach-title { margin: 0; font-size: 1.3rem; letter-spacing: -0.01em; }
+  .approach-sub { margin: 0.35rem 0 0; color: var(--muted); font-size: 0.97rem; }
+
+  /* Code block */
+  pre {
+    margin: 1.25rem 0 0;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.1rem;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 0.84rem;
+    line-height: 1.7;
+    tab-size: 2;
+  }
+  pre code { color: #cdd3e0; }
+  .tok-key { color: #c98aff; }
+  .tok-fn { color: #7c9cff; }
+  .tok-str { color: #8fd9b0; }
+  .tok-com { color: #6c7589; font-style: italic; }
+
+  /* Pros / Cons */
+  .pc {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 1.25rem;
+  }
+  .pc-col {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+  }
+  .pc-col.pros { background: var(--good-soft); border-color: rgba(95,211,154,0.3); }
+  .pc-col.cons { background: var(--bad-soft); border-color: rgba(240,138,138,0.3); }
+  .pc-col h4 {
+    margin: 0 0 0.6rem;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .pros h4 { color: var(--good); }
+  .cons h4 { color: var(--bad); }
+  .pc-col h4 svg { width: 15px; height: 15px; }
+  .pc-col ul { margin: 0; padding-left: 1.1rem; font-size: 0.9rem; color: var(--text); }
+  .pc-col li { margin: 0.3rem 0; }
+  .pc-col li::marker { color: var(--muted); }
+
+  /* Metric badges */
+  .metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1.25rem;
+  }
+  .badge {
+    display: inline-flex;
+    flex-direction: column;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 0.45rem 0.7rem;
+    min-width: 92px;
+  }
+  .badge .label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+  }
+  .badge .value { font-size: 0.92rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .badge .value.hi { color: var(--good); }
+  .badge .value.lo { color: var(--bad); }
+  .badge .value.mid { color: var(--accent); }
+
+  /* Recommendation */
+  .recommend {
+    background: linear-gradient(180deg, var(--accent-soft), transparent);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    padding: clamp(1.25rem, 3vw, 2rem);
+    margin-top: 0.5rem;
+  }
+  .recommend .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--accent);
+    background: var(--bg);
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+    padding: 0.3rem 0.7rem;
+    margin-bottom: 0.9rem;
+  }
+  .recommend .pill svg { width: 14px; height: 14px; }
+  .recommend h2 { margin: 0 0 0.6rem; font-size: 1.3rem; }
+  .recommend p { margin: 0 0 0.6rem; color: var(--text); }
+  .recommend p:last-child { margin-bottom: 0; }
+  .recommend strong { color: var(--accent); }
+
+  footer {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.85rem;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  @media (max-width: 620px) {
+    .pc { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <!-- REPLACE: breadcrumb / context line -->
+    <p class="breadcrumb">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3"/><path d="M18 2l4 4-9 9-4 1 1-4z"/></svg>
+      Exploration · Acme web client
+    </p>
+    <!-- REPLACE: the decision being made, phrased as a clear question or goal -->
+    <h1>Three ways to implement debounced search for the task filter input</h1>
+    <!-- REPLACE: one-paragraph framing of the problem and constraints -->
+    <p class="lede">We type-filter a long task list on every keystroke. Below are three implementation paths, each with its trade-offs, so we can pick the one that fits our React codebase and bundle budget.</p>
+  </header>
+
+  <!-- Jump links: keep one per approach -->
+  <nav class="jump" aria-label="Jump to approach">
+    <a href="#a1"><span class="num">01</span> Inline useEffect</a>
+    <a href="#a2"><span class="num">02</span> Custom hook</a>
+    <a href="#a3"><span class="num">03</span> External library</a>
+    <a href="#pick"><span class="num">★</span> Recommendation</a>
+  </nav>
+
+  <!-- ========================================================= -->
+  <!-- REPLACE: APPROACH 1. Duplicate this <article> for each option. -->
+  <article class="approach" id="a1">
+    <div class="approach-head">
+      <div class="approach-num">01</div>
+      <div>
+        <h2 class="approach-title">Inline useEffect + setTimeout</h2>
+        <p class="approach-sub">Debounce directly inside the component with a timer cleared on each render.</p>
+      </div>
+    </div>
+
+    <!-- REPLACE: representative code snippet. Wrap tokens in spans for color (optional). -->
+    <pre><code><span class="tok-key">const</span> [draft, setDraft] = <span class="tok-fn">useState</span>(<span class="tok-str">""</span>);
+
+<span class="tok-fn">useEffect</span>(() => {
+  <span class="tok-key">const</span> id = <span class="tok-fn">setTimeout</span>(() => <span class="tok-fn">onSearch</span>(draft), <span class="tok-str">250</span>);
+  <span class="tok-key">return</span> () => <span class="tok-fn">clearTimeout</span>(id); <span class="tok-com">// cancel on next keystroke</span>
+}, [draft]);</code></pre>
+
+    <div class="pc">
+      <div class="pc-col pros">
+        <h4>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+          Pros
+        </h4>
+        <ul>
+          <li>Zero dependencies, nothing new to learn.</li>
+          <li>Fully visible logic in one place.</li>
+        </ul>
+      </div>
+      <div class="pc-col cons">
+        <h4>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Cons
+        </h4>
+        <ul>
+          <li>Copy-pasted everywhere it is needed.</li>
+          <li>Harder to unit-test in isolation.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- REPLACE: metric badges. Add class hi / mid / lo to colour the value. -->
+    <div class="metrics">
+      <div class="badge"><span class="label">Bundle</span><span class="value hi">+0 kb</span></div>
+      <div class="badge"><span class="label">Testability</span><span class="value lo">Low</span></div>
+      <div class="badge"><span class="label">Reuse</span><span class="value lo">Low</span></div>
+      <div class="badge"><span class="label">SSR safe</span><span class="value hi">Yes</span></div>
+    </div>
+  </article>
+
+  <!-- ========================================================= -->
+  <!-- APPROACH 2 -->
+  <article class="approach" id="a2">
+    <div class="approach-head">
+      <div class="approach-num">02</div>
+      <div>
+        <h2 class="approach-title">Custom useDebounce hook</h2>
+        <p class="approach-sub">Extract the timer logic into a reusable, testable hook.</p>
+      </div>
+    </div>
+
+    <pre><code><span class="tok-key">function</span> <span class="tok-fn">useDebounce</span>(value, delay = <span class="tok-str">250</span>) {
+  <span class="tok-key">const</span> [v, setV] = <span class="tok-fn">useState</span>(value);
+  <span class="tok-fn">useEffect</span>(() => {
+    <span class="tok-key">const</span> id = <span class="tok-fn">setTimeout</span>(() => <span class="tok-fn">setV</span>(value), delay);
+    <span class="tok-key">return</span> () => <span class="tok-fn">clearTimeout</span>(id);
+  }, [value, delay]);
+  <span class="tok-key">return</span> v;
+}</code></pre>
+
+    <div class="pc">
+      <div class="pc-col pros">
+        <h4>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+          Pros
+        </h4>
+        <ul>
+          <li>Reusable across every input.</li>
+          <li>Trivial to unit-test with fake timers.</li>
+          <li>Matches our existing hooks folder pattern.</li>
+        </ul>
+      </div>
+      <div class="pc-col cons">
+        <h4>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Cons
+        </h4>
+        <ul>
+          <li>One more file to maintain ourselves.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="metrics">
+      <div class="badge"><span class="label">Bundle</span><span class="value hi">+0 kb</span></div>
+      <div class="badge"><span class="label">Testability</span><span class="value hi">High</span></div>
+      <div class="badge"><span class="label">Reuse</span><span class="value hi">High</span></div>
+      <div class="badge"><span class="label">SSR safe</span><span class="value hi">Yes</span></div>
+    </div>
+  </article>
+
+  <!-- ========================================================= -->
+  <!-- APPROACH 3 -->
+  <article class="approach" id="a3">
+    <div class="approach-head">
+      <div class="approach-num">03</div>
+      <div>
+        <h2 class="approach-title">Tiny external library</h2>
+        <p class="approach-sub">Pull in a maintained debounce utility and wire it to the input.</p>
+      </div>
+    </div>
+
+    <pre><code><span class="tok-key">import</span> { useDebouncedValue } <span class="tok-key">from</span> <span class="tok-str">"some-hooks"</span>;
+
+<span class="tok-key">const</span> [draft, setDraft] = <span class="tok-fn">useState</span>(<span class="tok-str">""</span>);
+<span class="tok-key">const</span> query = <span class="tok-fn">useDebouncedValue</span>(draft, <span class="tok-str">250</span>);
+<span class="tok-fn">useEffect</span>(() => <span class="tok-fn">onSearch</span>(query), [query]);</code></pre>
+
+    <div class="pc">
+      <div class="pc-col pros">
+        <h4>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+          Pros
+        </h4>
+        <ul>
+          <li>Battle-tested, edge cases handled.</li>
+          <li>No code to maintain ourselves.</li>
+        </ul>
+      </div>
+      <div class="pc-col cons">
+        <h4>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Cons
+        </h4>
+        <ul>
+          <li>Adds a dependency for ~6 lines of code.</li>
+          <li>Extra supply-chain surface to audit.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="metrics">
+      <div class="badge"><span class="label">Bundle</span><span class="value mid">+1.4 kb</span></div>
+      <div class="badge"><span class="label">Testability</span><span class="value mid">Medium</span></div>
+      <div class="badge"><span class="label">Reuse</span><span class="value hi">High</span></div>
+      <div class="badge"><span class="label">SSR safe</span><span class="value hi">Yes</span></div>
+    </div>
+  </article>
+
+  <!-- ========================================================= -->
+  <!-- REPLACE: your recommendation and reasoning -->
+  <section class="recommend" id="pick">
+    <span class="pill">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .587l3.668 7.431 8.2 1.193-5.934 5.787 1.401 8.168L12 18.896l-7.335 3.857 1.401-8.168L.132 9.211l8.2-1.193z"/></svg>
+      Recommendation
+    </span>
+    <h2>Go with approach 02 — the custom hook</h2>
+    <p>It gives us <strong>reuse and testability with zero bundle cost</strong>, and it slots straight into our existing <code>hooks/</code> folder so reviewers will recognise the pattern.</p>
+    <p>Reach for approach 03 only if we later need richer behaviour (leading-edge, max-wait) that would otherwise reimplement a known library. Approach 01 is fine for a one-off prototype but should not ship to shared code.</p>
+  </section>
+
+  <footer>
+    <!-- REPLACE: footer attribution / date -->
+    <span>Decision doc · Last updated Jun 2026</span>
+    <span>Published with <a href="https://ht-ml.app">ht-ml.app</a></span>
+  </footer>
+
+</div>
+</body>
+</html>
