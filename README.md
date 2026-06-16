@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/header.png" alt="ht-ml.app — HTML hosting, an API for agents" width="720">
+</p>
+
 # html — an Agent Skill for publishing HTML
 
 A portable [Agent Skill](https://agentskills.io) that lets any compatible AI agent
