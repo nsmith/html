@@ -33,6 +33,16 @@ It's [`install.sh`](install.sh). To install elsewhere (e.g. project-local), set
 curl -fsSL https://raw.githubusercontent.com/nsmith/html/main/install.sh | SKILLS_DIR=.claude/skills sh
 ```
 
+### Alternative: the `skills` CLI
+
+If you use the [`skills` CLI](https://skills.sh), it can install into every agent
+it detects and gives you `skills update` / `skills remove`:
+
+```bash
+npx skills add nsmith/html        # project-level (./.claude/skills, ./.agents/skills, …)
+npx skills add nsmith/html -g     # user-level (global)
+```
+
 ### Manual install
 
 A skill is just a folder containing `SKILL.md`; place it in your client's skills
