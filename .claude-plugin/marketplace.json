@@ -1,0 +1,16 @@
+{
+  "name": "ht-ml",
+  "description": "The official marketplace for the ht-ml.app HTML-publishing Agent Skill.",
+  "owner": { "name": "Nathan Smith", "url": "https://ht-ml.app" },
+  "plugins": [
+    {
+      "name": "html",
+      "source": "./",
+      "description": "Publish single-page HTML to the public web instantly via ht-ml.app — create, update, assets, password protection, and 20 ready-made page templates.",
+      "version": "1.0.0",
+      "author": { "name": "Nathan Smith" },
+      "homepage": "https://ht-ml.app",
+      "license": "MIT"
+    }
+  ]
+}

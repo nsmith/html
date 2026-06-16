@@ -43,6 +43,18 @@ npx skills add nsmith/html        # project-level (./.claude/skills, ./.agents/s
 npx skills add nsmith/html -g     # user-level (global)
 ```
 
+### Alternative: Claude Code plugin
+
+This repo also doubles as a single-plugin Claude Code marketplace (named `ht-ml`).
+From inside Claude Code:
+
+```text
+/plugin marketplace add nsmith/html
+/plugin install html@ht-ml
+```
+
+The plugin bundles the same skill, templates, and references.
+
 ### Manual install
 
 A skill is just a folder containing `SKILL.md`; place it in your client's skills

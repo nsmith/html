@@ -1,0 +1,9 @@
+{
+  "name": "html",
+  "description": "Publish single-page HTML to the public web instantly via ht-ml.app — create, update, upload assets, optional password protection, and 20 ready-made page templates.",
+  "version": "1.0.0",
+  "author": { "name": "Nathan Smith" },
+  "homepage": "https://ht-ml.app",
+  "repository": "https://github.com/nsmith/html",
+  "license": "MIT"
+}
