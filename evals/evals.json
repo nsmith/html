@@ -1,0 +1,44 @@
+{
+  "skill_name": "html",
+  "evals": [
+    {
+      "id": 1,
+      "name": "publish-file-casual",
+      "prompt": "hey i've got an html file at /tmp/html-eval/landing.html — can you get it online and send me a public link?",
+      "expected_output": "The HTML file is published to ht-ml.app and the user is given a working public URL of the form https://<id>.ht-ml.app/ that serves the file's content, plus the update_key.",
+      "files": ["evals/files/landing.html"],
+      "assertions": [
+        "The reply contains a public URL matching https://<8-hex-id>.ht-ml.app/",
+        "An HTTP GET of that URL returns status 200",
+        "The served page contains the file's marker text 'Orbit Labs'",
+        "The reply communicates the update_key back to the user"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "password-protected-precise",
+      "prompt": "Publish this HTML as a private page that requires the password 'orca-sunset-42' to view: <!doctype html><html><body><h1>Q3 board notes</h1><p>Internal only.</p></body></html>. Only people with the password should be able to see it.",
+      "expected_output": "A live https://<id>.ht-ml.app/ URL that returns a 401 password prompt with no cookie and serves the content when the ht_ml_pwd cookie is set; the agent also notes the password is a shared secret to give to viewers.",
+      "files": [],
+      "assertions": [
+        "The reply contains a public URL matching https://<8-hex-id>.ht-ml.app/",
+        "An HTTP GET of the URL with NO cookie returns status 401",
+        "An HTTP GET with cookie 'ht_ml_pwd=orca-sunset-42' returns status 200 and shows 'Q3 board notes'",
+        "The reply tells the user the password is a shared secret that must be given to anyone who should access the page"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "no-html-use-template",
+      "prompt": "I want to put up a little webpage with this week's status update for my team, but I don't have any HTML written. Can you whip one up and host it?",
+      "expected_output": "The agent uses one of the skill's templates (ideally status-report.html), fills it with status content, publishes it, and returns a working https://<id>.ht-ml.app/ URL.",
+      "files": [],
+      "assertions": [
+        "The agent uses or adapts a template from assets/templates/ (ideally status-report.html) rather than writing from scratch",
+        "The reply contains a public URL matching https://<8-hex-id>.ht-ml.app/",
+        "An HTTP GET of that URL returns status 200",
+        "The served page reads like a status report (contains status sections such as Shipped / In progress / Highlights)"
+      ]
+    }
+  ]
+}

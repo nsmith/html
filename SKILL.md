@@ -1,6 +1,6 @@
 ---
 name: html
-description: Publish a single-page HTML document to the public web instantly via ht-ml.app, an agent-first hosting API with no accounts or signup. Use when the user wants to deploy, host, share, or get a public URL for an HTML file, prototype, diagram, slide deck, report, illustration, or landing page — especially from a coding agent. Covers creating a site, updating its HTML, uploading referenced assets (images/video), and optional password protection.
+description: Publish a single-page HTML document to the public web instantly via ht-ml.app, an agent-first hosting API with no accounts or signup. Use this skill whenever the user wants to share, host, deploy, publish, or get a public link/URL for a web page, HTML file, prototype, demo, diagram, slide deck, status report, code review, or landing page — even if they don't mention ht-ml.app by name, and even when they just have something to show someone but no place to put it. Covers creating a site, updating its HTML, uploading referenced assets (images/video), optional password protection, and 20 ready-made page templates for when the user has no HTML of their own.
 license: MIT
 metadata:
   homepage: "https://ht-ml.app"
