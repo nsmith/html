@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: ht-ml.app API docs
+    url: https://ht-ml.app/llms.txt
+    about: Self-documenting API reference (also at https://api.ht-ml.app/v1/help).
+  - name: Agent Skills specification
+    url: https://agentskills.io/specification
+    about: The spec this skill is validated against.
